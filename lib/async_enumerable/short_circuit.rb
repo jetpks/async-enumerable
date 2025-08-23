@@ -13,35 +13,24 @@ module AsyncEnumerable
     def all?(&block)
       return super unless block_given?
 
-      Sync do
-        tasks = Concurrent::Array.new
+      Sync do |parent|
+        barrier = ::Async::Barrier.new(parent:)
         failed = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
           break if failed.true?
 
-          task = Async do
+          barrier.async do
             unless block.call(item)
               failed.make_true
+              # Stop the barrier early when we find a failure
+              barrier.stop
             end
           end
-          tasks << task
         end
 
-        # Wait for all spawned tasks or until one fails
-        tasks.each do |task|
-          begin
-            task.wait
-          rescue Async::Stop
-            # Task was stopped, that's ok
-          end
-
-          # If we found a failure, stop remaining tasks
-          if failed.true?
-            tasks.each(&:stop)
-            break
-          end
-        end
+        # Wait for all tasks or until barrier is stopped early
+        barrier.wait rescue Async::Stop
 
         !failed.true?
       end
@@ -67,11 +56,7 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        begin
-          barrier.wait
-        rescue Async::Stop
-          # Barrier was stopped early because we found a match
-        end
+        barrier.wait rescue Async::Stop
 
         found.true?
       end
@@ -84,35 +69,25 @@ module AsyncEnumerable
     def one?(&block)
       return super unless block_given?
 
-      Sync do
-        tasks = Concurrent::Array.new
+      Sync do |parent|
+        barrier = ::Async::Barrier.new(parent:)
         count = Concurrent::AtomicFixnum.new(0)
 
         @enumerable.each do |item|
           break if count.value > 1
 
-          task = Async do
+          barrier.async do
             if block.call(item)
-              count.increment
+              if count.increment > 1
+                # Stop the barrier early when we have too many matches
+                barrier.stop
+              end
             end
           end
-          tasks << task
         end
 
-        # Wait for all tasks
-        tasks.each do |task|
-          begin
-            task.wait
-          rescue Async::Stop
-            # Task was stopped, that's ok
-          end
-
-          # If we found too many, stop remaining tasks
-          if count.value > 1
-            tasks.each(&:stop)
-            break
-          end
-        end
+        # Wait for all tasks or until barrier is stopped early
+        barrier.wait rescue Async::Stop
 
         count.value == 1
       end
@@ -129,36 +104,26 @@ module AsyncEnumerable
     def find(&block)
       return super unless block_given?
 
-      Sync do
-        tasks = Concurrent::Array.new
+      Sync do |parent|
+        barrier = ::Async::Barrier.new(parent:)
         result = Concurrent::AtomicReference.new(nil)
 
         @enumerable.each do |item|
           break unless result.get.nil?
 
-          task = Async do
+          barrier.async do
             if block.call(item)
               # Use compare_and_set to ensure only the first match wins
-              result.compare_and_set(nil, item)
+              if result.compare_and_set(nil, item)
+                # Stop the barrier early when we find a match
+                barrier.stop
+              end
             end
           end
-          tasks << task
         end
 
-        # Wait for all spawned tasks or until one is found
-        tasks.each do |task|
-          begin
-            task.wait
-          rescue Async::Stop
-            # Task was stopped, that's ok
-          end
-
-          # If we found something, stop remaining tasks
-          unless result.get.nil?
-            tasks.each(&:stop)
-            break
-          end
-        end
+        # Wait for all tasks or until barrier is stopped early
+        barrier.wait rescue Async::Stop
 
         result.get
       end
@@ -171,37 +136,27 @@ module AsyncEnumerable
         return super
       end
 
-      Sync do
-        tasks = Concurrent::Array.new
+      Sync do |parent|
+        barrier = ::Async::Barrier.new(parent:)
         result_index = Concurrent::AtomicReference.new(nil)
 
         @enumerable.each_with_index do |item, index|
           break unless result_index.get.nil?
 
-          task = Async do
+          barrier.async do
             match = value.nil? ? block.call(item) : (item == value)
             if match
               # Use compare_and_set to ensure only the first match wins
-              result_index.compare_and_set(nil, index)
+              if result_index.compare_and_set(nil, index)
+                # Stop the barrier early when we find a match
+                barrier.stop
+              end
             end
           end
-          tasks << task
         end
 
-        # Wait for all spawned tasks or until one is found
-        tasks.each do |task|
-          begin
-            task.wait
-          rescue Async::Stop
-            # Task was stopped, that's ok
-          end
-
-          # If we found something, stop remaining tasks
-          unless result_index.get.nil?
-            tasks.each(&:stop)
-            break
-          end
-        end
+        # Wait for all tasks or until barrier is stopped early
+        barrier.wait rescue Async::Stop
 
         result_index.get
       end
