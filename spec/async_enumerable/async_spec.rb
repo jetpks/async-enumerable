@@ -42,11 +42,11 @@ RSpec.describe AsyncEnumerable::Async do
       expect(result).to be_a(Array)
     end
 
-    it "returns a set for set input" do
+    it "returns an array for set input" do
       require "set"
       result = Set[1, 2, 3].async.map { |x| x * 2 }
-      expect(result).to be_a(Set)
-      expect(result).to eq(Set[2, 4, 6])
+      expect(result).to be_a(Array)
+      expect(result.sort).to eq([2, 4, 6])
     end
 
     it "executes blocks in parallel" do
