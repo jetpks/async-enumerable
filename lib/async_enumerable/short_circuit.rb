@@ -1,59 +1,84 @@
 # frozen_string_literal: true
 
+require "async/barrier"
+require "async/semaphore"
+
 module AsyncEnumerable
   module ShortCircuit
-    # Predicates that short-circuit
+    # Predicates that short-circuit by stopping tasks early
 
     def all?(&block)
       return super unless block_given?
 
-      result = true
-      continue = true
-
-      Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+      Sync do
+        tasks = []
+        failed = false
 
         @enumerable.each do |item|
-          break unless continue
+          break if failed
 
-          barrier.async do
-            if continue && !block.call(item)
-              result = false
-              continue = false
+          task = Async do
+            unless block.call(item)
+              failed = true
             end
+          end
+          tasks << task
+        end
+
+        # Wait for all spawned tasks or until one fails
+        tasks.each do |task|
+          begin
+            task.wait
+          rescue Async::Stop
+            # Task was stopped, that's ok
+          end
+
+          # If we found a failure, stop remaining tasks
+          if failed
+            tasks.each(&:stop)
+            break
           end
         end
 
-        barrier.wait
+        !failed
       end
-
-      result
     end
 
     def any?(&block)
       return super unless block_given?
 
-      result = false
-      continue = true
-
-      Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+      Sync do
+        tasks = []
+        found = false
 
         @enumerable.each do |item|
-          break unless continue
+          break if found
 
-          barrier.async do
-            if continue && block.call(item)
-              result = true
-              continue = false
+          task = Async do
+            if block.call(item)
+              found = true
             end
+          end
+          tasks << task
+        end
+
+        # Wait for all spawned tasks or until one succeeds
+        tasks.each do |task|
+          begin
+            task.wait
+          rescue Async::Stop
+            # Task was stopped, that's ok
+          end
+
+          # If we found a match, stop remaining tasks
+          if found
+            tasks.each(&:stop)
+            break
           end
         end
 
-        barrier.wait
+        found
       end
-
-      result
     end
 
     def none?(&block)
@@ -63,30 +88,43 @@ module AsyncEnumerable
     def one?(&block)
       return super unless block_given?
 
-      count = 0
-      continue = true
-
-      Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
-        mutex = Mutex.new
+      Sync do
+        tasks = []
+        count = 0
+        count_mutex = Mutex.new
+        too_many = false
 
         @enumerable.each do |item|
-          break unless continue
+          break if too_many
 
-          barrier.async do
-            if continue && block.call(item)
-              mutex.synchronize do
+          task = Async do
+            if block.call(item)
+              count_mutex.synchronize do
                 count += 1
-                continue = false if count > 1
+                too_many = true if count > 1
               end
             end
           end
+          tasks << task
         end
 
-        barrier.wait
-      end
+        # Wait for all tasks
+        tasks.each do |task|
+          begin
+            task.wait
+          rescue Async::Stop
+            # Task was stopped, that's ok
+          end
 
-      count == 1
+          # If we found too many, stop remaining tasks
+          if too_many
+            tasks.each(&:stop)
+            break
+          end
+        end
+
+        count == 1
+      end
     end
 
     def include?(obj)
@@ -100,27 +138,40 @@ module AsyncEnumerable
     def find(&block)
       return super unless block_given?
 
-      result = nil
-      found = false
+      Sync do
+        tasks = []
+        result = nil
+        found = false
 
-      Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
-
-        @enumerable.each_with_index do |item, index|
+        @enumerable.each do |item|
           break if found
 
-          barrier.async do
-            if !found && block.call(item)
+          task = Async do
+            if block.call(item)
               result = item
               found = true
             end
           end
+          tasks << task
         end
 
-        barrier.wait
-      end
+        # Wait for all spawned tasks or until one is found
+        tasks.each do |task|
+          begin
+            task.wait
+          rescue Async::Stop
+            # Task was stopped, that's ok
+          end
 
-      result
+          # If we found something, stop remaining tasks
+          if found
+            tasks.each(&:stop)
+            break
+          end
+        end
+
+        result
+      end
     end
 
     alias_method :detect, :find
@@ -130,37 +181,48 @@ module AsyncEnumerable
         return super
       end
 
-      result = nil
-      found = false
-
-      Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+      Sync do
+        tasks = []
+        result_index = nil
+        found = false
 
         @enumerable.each_with_index do |item, index|
           break if found
 
-          barrier.async do
-            if !found
-              match = value.nil? ? block.call(item) : (item == value)
-              if match
-                result = index
-                found = true
-              end
+          task = Async do
+            match = value.nil? ? block.call(item) : (item == value)
+            if match
+              result_index = index
+              found = true
             end
+          end
+          tasks << task
+        end
+
+        # Wait for all spawned tasks or until one is found
+        tasks.each do |task|
+          begin
+            task.wait
+          rescue Async::Stop
+            # Task was stopped, that's ok
+          end
+
+          # If we found something, stop remaining tasks
+          if found
+            tasks.each(&:stop)
+            break
           end
         end
 
-        barrier.wait
+        result_index
       end
-
-      result
     end
 
-    # Take methods that short-circuit
+    # Take methods - optimize by only spawning needed tasks
 
     def first(n = nil)
       if n.nil?
-        # Just get the first element
+        # Just get the first element synchronously
         @enumerable.first
       else
         # Get first n elements
@@ -171,11 +233,11 @@ module AsyncEnumerable
     def take(n)
       return [] if n <= 0
 
-      results = []
-      mutex = Mutex.new
-
       Sync do |parent|
+        # Use a barrier to collect exactly n results
         barrier = ::Async::Barrier.new(parent:)
+        results = []
+        mutex = Mutex.new
 
         @enumerable.each_with_index do |item, index|
           break if index >= n
@@ -187,17 +249,18 @@ module AsyncEnumerable
           end
         end
 
+        # Wait for all spawned tasks
         barrier.wait
-      end
 
-      results.compact
+        results
+      end
     end
 
     def take_while(&block)
       return super unless block_given?
 
-      # For take_while, we need sequential checking since each element
-      # depends on previous ones not breaking the condition
+      # take_while needs sequential checking, so we can't parallelize
+      # Keep the synchronous implementation
       results = []
 
       @enumerable.each do |item|
