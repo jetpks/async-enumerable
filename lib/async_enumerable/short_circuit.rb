@@ -50,38 +50,27 @@ module AsyncEnumerable
     def any?(&block)
       return super unless block_given?
 
-      Sync do
-        tasks = Concurrent::Array.new
+      Sync do |parent|
+        barrier = ::Async::Barrier.new(parent:)
         found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
           break if found.true?
 
-          task = Async do
+          barrier.async do
             if block.call(item)
               found.make_true
+              # Stop the barrier early when we find a match
+              barrier.stop
             end
           end
-          tasks << task
         end
 
-        # Wait for all spawned tasks or until one succeeds
-        tasks.each do |task|
-          # TODO: this is slow in cases where tasks near the end of the array
-          # complete faster than tasks near the beginning of the array. we
-          # *should* be able to use an Async::Condition here to detect when we
-          # have a find, rather than doing the each(&:wait)
-          begin
-            task.wait
-          rescue Async::Stop
-            # Task was stopped, that's ok
-          end
-
-          # If we found a match, stop remaining tasks
-          if found.true?
-            tasks.each(&:stop)
-            break
-          end
+        # Wait for all tasks or until barrier is stopped early
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Barrier was stopped early because we found a match
         end
 
         found.true?
