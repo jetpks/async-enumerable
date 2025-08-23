@@ -1,0 +1,32 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO side effect operation
+  def process_item(n)
+    sleep(rand / 1000.0) # Sleep 0-1ms to simulate IO
+    # Side effect: would normally write to file, database, etc.
+    n * 2
+  end
+  
+  small_array = (1..10).to_a
+  medium_array = (1..50).to_a
+  large_array = (1..100).to_a
+
+benchmark:
+  sync_small: |
+    small_array.each { |n| process_item(n) }
+  
+  async_small: |
+    small_array.async.each { |n| process_item(n) }
+  
+  sync_medium: |
+    medium_array.each { |n| process_item(n) }
+  
+  async_medium: |
+    medium_array.async.each { |n| process_item(n) }
+  
+  sync_large: |
+    large_array.each { |n| process_item(n) }
+  
+  async_large: |
+    large_array.async.each { |n| process_item(n) }

@@ -1,0 +1,37 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation for finding an item
+  def matches_criteria(n, target)
+    sleep(rand / 1000.0) # Sleep 0-1ms to simulate IO
+    n == target
+  end
+  
+  small_array = (1..20).to_a
+  medium_array = (1..100).to_a
+  large_array = (1..500).to_a
+
+benchmark:
+  sync_small_early: |
+    small_array.find { |n| matches_criteria(n, 5) }
+  
+  async_small_early: |
+    small_array.async.find { |n| matches_criteria(n, 5) }
+  
+  sync_medium_mid: |
+    medium_array.find { |n| matches_criteria(n, 50) }
+  
+  async_medium_mid: |
+    medium_array.async.find { |n| matches_criteria(n, 50) }
+  
+  sync_large_late: |
+    large_array.find { |n| matches_criteria(n, 450) }
+  
+  async_large_late: |
+    large_array.async.find { |n| matches_criteria(n, 450) }
+  
+  sync_not_found: |
+    medium_array.find { |n| matches_criteria(n, 1000) }
+  
+  async_not_found: |
+    medium_array.async.find { |n| matches_criteria(n, 1000) }

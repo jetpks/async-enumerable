@@ -1,0 +1,39 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation with early termination potential
+  def expensive_check(n, target)
+    sleep(rand / 1000.0) # Sleep 0-1ms to simulate IO
+    n == target
+  end
+  
+  # Arrays with target at different positions
+  early_match = (1..100).to_a  # Target at position 10
+  mid_match = (1..100).to_a    # Target at position 50
+  late_match = (1..100).to_a   # Target at position 90
+  no_match = (1..100).to_a     # No target
+
+benchmark:
+  sync_early: |
+    early_match.any? { |n| expensive_check(n, 10) }
+  
+  async_early: |
+    early_match.async.any? { |n| expensive_check(n, 10) }
+  
+  sync_mid: |
+    mid_match.any? { |n| expensive_check(n, 50) }
+  
+  async_mid: |
+    mid_match.async.any? { |n| expensive_check(n, 50) }
+  
+  sync_late: |
+    late_match.any? { |n| expensive_check(n, 90) }
+  
+  async_late: |
+    late_match.async.any? { |n| expensive_check(n, 90) }
+  
+  sync_no_match: |
+    no_match.any? { |n| expensive_check(n, 200) }
+  
+  async_no_match: |
+    no_match.async.any? { |n| expensive_check(n, 200) }

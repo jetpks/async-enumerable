@@ -1,0 +1,38 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation for validation
+  def valid_item?(n, max_value = 1000)
+    sleep(rand / 1000.0) # Sleep 0-1ms to simulate IO
+    n < max_value
+  end
+  
+  all_valid = (1..50).to_a
+  early_invalid = [1, 2, 1001, 4, 5] + (6..50).to_a  # Invalid at position 3
+  mid_invalid = (1..25).to_a + [1001] + (27..50).to_a  # Invalid at middle
+  late_invalid = (1..49).to_a + [1001]  # Invalid at end
+
+benchmark:
+  sync_all_valid: |
+    all_valid.all? { |n| valid_item?(n) }
+  
+  async_all_valid: |
+    all_valid.async.all? { |n| valid_item?(n) }
+  
+  sync_early_fail: |
+    early_invalid.all? { |n| valid_item?(n) }
+  
+  async_early_fail: |
+    early_invalid.async.all? { |n| valid_item?(n) }
+  
+  sync_mid_fail: |
+    mid_invalid.all? { |n| valid_item?(n) }
+  
+  async_mid_fail: |
+    mid_invalid.async.all? { |n| valid_item?(n) }
+  
+  sync_late_fail: |
+    late_invalid.all? { |n| valid_item?(n) }
+  
+  async_late_fail: |
+    late_invalid.async.all? { |n| valid_item?(n) }

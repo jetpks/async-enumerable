@@ -5,6 +5,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in async_enumerable.gemspec
 gemspec
 
+gem "benchmark-driver"
 gem "irb"
 gem "pry"
 gem "pry-byebug"

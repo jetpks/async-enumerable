@@ -1,0 +1,31 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation that checks a condition
+  def check_condition(n)
+    sleep(rand / 1000.0) # Sleep 0-1ms to simulate IO
+    n % 3 == 0
+  end
+  
+  small_array = (1..20).to_a
+  medium_array = (1..100).to_a
+  large_array = (1..500).to_a
+
+benchmark:
+  sync_small: |
+    small_array.select { |n| check_condition(n) }
+  
+  async_small: |
+    small_array.async.select { |n| check_condition(n) }
+  
+  sync_medium: |
+    medium_array.select { |n| check_condition(n) }
+  
+  async_medium: |
+    medium_array.async.select { |n| check_condition(n) }
+  
+  sync_large: |
+    large_array.select { |n| check_condition(n) }
+  
+  async_large: |
+    large_array.async.select { |n| check_condition(n) }
