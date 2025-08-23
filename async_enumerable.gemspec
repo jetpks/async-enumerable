@@ -43,7 +43,4 @@ Gem::Specification.new do |spec|
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "async", "~> 2.27"
   spec.add_dependency "concurrent-ruby", "~> 1.3"
-
-  spec.add_development_dependency "pry"
-  spec.add_development_dependency "pry-byebug"
 end

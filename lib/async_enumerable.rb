@@ -1,8 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "async_enumerable/version"
+require "async"
+require "async/barrier"
+require "concurrent"
 
-module AsyncEnumerable
-  class Error < StandardError; end
-  # Your code goes here...
-end
+module AsyncEnumerable; end
+
+require "async_enumerable/version"
+require "async_enumerable/errors"
+require "async_enumerable/map"
+require "async_enumerable/async"
+
+require "enumerable/async"
