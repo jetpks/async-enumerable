@@ -67,6 +67,10 @@ module AsyncEnumerable
 
         # Wait for all spawned tasks or until one succeeds
         tasks.each do |task|
+          # TODO: this is slow in cases where tasks near the end of the array
+          # complete faster than tasks near the beginning of the array. we
+          # *should* be able to use an Async::Condition here to detect when we
+          # have a find, rather than doing the each(&:wait)
           begin
             task.wait
           rescue Async::Stop
@@ -88,24 +92,19 @@ module AsyncEnumerable
       !any?(&block)
     end
 
-    # TODO: i'm not sure we need the `too_many` variable in `#one?` -- it seems
-    # like we could just check `count > 1` instead of tracking state
-    # separately
     def one?(&block)
       return super unless block_given?
 
       Sync do
         tasks = Concurrent::Array.new
         count = Concurrent::AtomicFixnum.new(0)
-        too_many = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if too_many.true?
+          break if count.value > 1
 
           task = Async do
             if block.call(item)
-              new_count = count.increment
-              too_many.make_true if new_count > 1
+              count.increment
             end
           end
           tasks << task
@@ -120,7 +119,7 @@ module AsyncEnumerable
           end
 
           # If we found too many, stop remaining tasks
-          if too_many.true?
+          if count.value > 1
             tasks.each(&:stop)
             break
           end
@@ -138,24 +137,20 @@ module AsyncEnumerable
 
     # Find methods that short-circuit
 
-    # TODO: i'm not sure we need the `found` variable in `#find` -- it seems
-    # like we could just check `result.nil?` instead of tracking state
-    # separately
     def find(&block)
       return super unless block_given?
 
       Sync do
         tasks = Concurrent::Array.new
         result = Concurrent::AtomicReference.new(nil)
-        found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if found.true?
+          break unless result.get.nil?
 
           task = Async do
             if block.call(item)
-              result.set(item)
-              found.make_true
+              # Use compare_and_set to ensure only the first match wins
+              result.compare_and_set(nil, item)
             end
           end
           tasks << task
@@ -170,7 +165,7 @@ module AsyncEnumerable
           end
 
           # If we found something, stop remaining tasks
-          if found.true?
+          unless result.get.nil?
             tasks.each(&:stop)
             break
           end
@@ -182,9 +177,6 @@ module AsyncEnumerable
 
     alias_method :detect, :find
 
-    # TODO: i'm not sure we need the `found` variable in `#find_index` -- it
-    # seems like we could just check `result_index.nil?` instead of tracking
-    # state separately
     def find_index(value = nil, &block)
       if value.nil? && !block_given?
         return super
@@ -193,16 +185,15 @@ module AsyncEnumerable
       Sync do
         tasks = Concurrent::Array.new
         result_index = Concurrent::AtomicReference.new(nil)
-        found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each_with_index do |item, index|
-          break if found.true?
+          break unless result_index.get.nil?
 
           task = Async do
             match = value.nil? ? block.call(item) : (item == value)
             if match
-              result_index.set(index)
-              found.make_true
+              # Use compare_and_set to ensure only the first match wins
+              result_index.compare_and_set(nil, index)
             end
           end
           tasks << task
@@ -217,7 +208,7 @@ module AsyncEnumerable
           end
 
           # If we found something, stop remaining tasks
-          if found.true?
+          unless result_index.get.nil?
             tasks.each(&:stop)
             break
           end
@@ -263,21 +254,10 @@ module AsyncEnumerable
       end
     end
 
-    # TODO: since we can't do this asynchronously, just defer back to the
-    # synchronous version rather than reimplementing synchronously
     def take_while(&block)
-      return super unless block_given?
-
       # take_while needs sequential checking, so we can't parallelize
-      # Keep the synchronous implementation
-      results = Concurrent::Array.new
-
-      @enumerable.each do |item|
-        break unless block.call(item)
-        results << item
-      end
-
-      results.to_a
+      # Defer to the synchronous implementation from Enumerable
+      @enumerable.take_while(&block)
     end
 
     # Override lazy to return a non-async lazy enumerator
