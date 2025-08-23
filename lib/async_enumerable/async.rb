@@ -4,14 +4,10 @@ module AsyncEnumerable
   class Async
     include Enumerable
     include Map
+    include Each
 
     def initialize(enumerable)
       @enumerable = enumerable
-    end
-
-    def each(&block)
-      return @enumerable.each unless block_given?
-      @enumerable.each(&block)
     end
 
     def to_a

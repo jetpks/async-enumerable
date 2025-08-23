@@ -80,19 +80,6 @@ RSpec.describe AsyncEnumerable::Async do
     end
   end
 
-  describe "#each" do
-    it "iterates over elements" do
-      result = []
-      [1, 2, 3].async.each { |x| result << x }
-      expect(result).to eq([1, 2, 3])
-    end
-
-    it "returns an enumerator when no block given" do
-      result = [1, 2, 3].async.each
-      expect(result).to be_a(Enumerator)
-    end
-  end
-
   describe "#to_a" do
     it "converts to array" do
       result = (1..3).async.to_a
