@@ -6,7 +6,7 @@ module AsyncEnumerable
       return enum_for(__method__) unless block_given?
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
 
         @enumerable.each do |item|
           barrier.async do

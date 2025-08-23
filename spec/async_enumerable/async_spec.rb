@@ -2,27 +2,27 @@
 
 require "spec_helper"
 
-RSpec.describe AsyncEnumerable::Async do
+RSpec.describe AsyncEnumerable::AsyncEnumerator do
   describe "#async" do
     it "returns an AsyncEnumerable::Async instance" do
       result = [1, 2, 3].async
-      expect(result).to be_a(AsyncEnumerable::Async)
+      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
 
     it "works with arrays" do
       result = [1, 2, 3].async
-      expect(result).to be_a(AsyncEnumerable::Async)
+      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
 
     it "works with ranges" do
       result = (1..3).async
-      expect(result).to be_a(AsyncEnumerable::Async)
+      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
 
     it "works with sets" do
       require "set"
       result = Set[1, 2, 3].async
-      expect(result).to be_a(AsyncEnumerable::Async)
+      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
   end
 

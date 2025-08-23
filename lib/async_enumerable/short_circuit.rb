@@ -14,7 +14,7 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         failed = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
@@ -40,7 +40,7 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
@@ -70,7 +70,7 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         count = Concurrent::AtomicFixnum.new(0)
 
         @enumerable.each do |item|
@@ -105,7 +105,7 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         result = Concurrent::AtomicReference.new(nil)
 
         @enumerable.each do |item|
@@ -137,7 +137,7 @@ module AsyncEnumerable
       end
 
       Sync do |parent|
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         result_index = Concurrent::AtomicReference.new(nil)
 
         @enumerable.each_with_index do |item, index|
@@ -179,7 +179,7 @@ module AsyncEnumerable
 
       Sync do |parent|
         # Use a barrier to collect exactly n results
-        barrier = ::Async::Barrier.new(parent:)
+        barrier = Async::Barrier.new(parent:)
         results = Concurrent::Array.new
 
         @enumerable.each_with_index do |item, index|

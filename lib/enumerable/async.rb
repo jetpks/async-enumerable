@@ -2,6 +2,6 @@
 
 module Enumerable
   def async
-    AsyncEnumerable::Async.new(self)
+    AsyncEnumerable::AsyncEnumerator.new(self)
   end
 end

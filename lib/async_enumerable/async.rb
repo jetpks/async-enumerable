@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module AsyncEnumerable
-  class Async
+  class AsyncEnumerator
     include Enumerable
     include Each
     include ShortCircuit

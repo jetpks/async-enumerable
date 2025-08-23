@@ -12,7 +12,7 @@ RSpec.describe "AsyncEnumerable::Each" do
 
     it "returns self for chaining" do
       result = [1, 2, 3].async.each { |x| x * 2 }
-      expect(result).to be_a(AsyncEnumerable::Async)
+      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
 
     it "returns enumerator when no block given" do
