@@ -2,6 +2,9 @@
 
 require "async/barrier"
 require "async/semaphore"
+require "concurrent/atomic/atomic_boolean"
+require "concurrent/atomic/atomic_fixnum"
+require "concurrent/array"
 
 module AsyncEnumerable
   module ShortCircuit
@@ -11,15 +14,15 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do
-        tasks = []
-        failed = false
+        tasks = Concurrent::Array.new
+        failed = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if failed
+          break if failed.true?
 
           task = Async do
             unless block.call(item)
-              failed = true
+              failed.make_true
             end
           end
           tasks << task
@@ -34,13 +37,13 @@ module AsyncEnumerable
           end
 
           # If we found a failure, stop remaining tasks
-          if failed
+          if failed.true?
             tasks.each(&:stop)
             break
           end
         end
 
-        !failed
+        !failed.true?
       end
     end
 
@@ -48,15 +51,15 @@ module AsyncEnumerable
       return super unless block_given?
 
       Sync do
-        tasks = []
-        found = false
+        tasks = Concurrent::Array.new
+        found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if found
+          break if found.true?
 
           task = Async do
             if block.call(item)
-              found = true
+              found.make_true
             end
           end
           tasks << task
@@ -71,13 +74,13 @@ module AsyncEnumerable
           end
 
           # If we found a match, stop remaining tasks
-          if found
+          if found.true?
             tasks.each(&:stop)
             break
           end
         end
 
-        found
+        found.true?
       end
     end
 
@@ -85,24 +88,24 @@ module AsyncEnumerable
       !any?(&block)
     end
 
+    # TODO: i'm not sure we need the `too_many` variable in `#one?` -- it seems
+    # like we could just check `count > 1` instead of tracking state
+    # separately
     def one?(&block)
       return super unless block_given?
 
       Sync do
-        tasks = []
-        count = 0
-        count_mutex = Mutex.new
-        too_many = false
+        tasks = Concurrent::Array.new
+        count = Concurrent::AtomicFixnum.new(0)
+        too_many = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if too_many
+          break if too_many.true?
 
           task = Async do
             if block.call(item)
-              count_mutex.synchronize do
-                count += 1
-                too_many = true if count > 1
-              end
+              new_count = count.increment
+              too_many.make_true if new_count > 1
             end
           end
           tasks << task
@@ -117,13 +120,13 @@ module AsyncEnumerable
           end
 
           # If we found too many, stop remaining tasks
-          if too_many
+          if too_many.true?
             tasks.each(&:stop)
             break
           end
         end
 
-        count == 1
+        count.value == 1
       end
     end
 
@@ -135,21 +138,24 @@ module AsyncEnumerable
 
     # Find methods that short-circuit
 
+    # TODO: i'm not sure we need the `found` variable in `#find` -- it seems
+    # like we could just check `result.nil?` instead of tracking state
+    # separately
     def find(&block)
       return super unless block_given?
 
       Sync do
-        tasks = []
-        result = nil
-        found = false
+        tasks = Concurrent::Array.new
+        result = Concurrent::AtomicReference.new(nil)
+        found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each do |item|
-          break if found
+          break if found.true?
 
           task = Async do
             if block.call(item)
-              result = item
-              found = true
+              result.set(item)
+              found.make_true
             end
           end
           tasks << task
@@ -164,36 +170,39 @@ module AsyncEnumerable
           end
 
           # If we found something, stop remaining tasks
-          if found
+          if found.true?
             tasks.each(&:stop)
             break
           end
         end
 
-        result
+        result.get
       end
     end
 
     alias_method :detect, :find
 
+    # TODO: i'm not sure we need the `found` variable in `#find_index` -- it
+    # seems like we could just check `result_index.nil?` instead of tracking
+    # state separately
     def find_index(value = nil, &block)
       if value.nil? && !block_given?
         return super
       end
 
       Sync do
-        tasks = []
-        result_index = nil
-        found = false
+        tasks = Concurrent::Array.new
+        result_index = Concurrent::AtomicReference.new(nil)
+        found = Concurrent::AtomicBoolean.new(false)
 
         @enumerable.each_with_index do |item, index|
-          break if found
+          break if found.true?
 
           task = Async do
             match = value.nil? ? block.call(item) : (item == value)
             if match
-              result_index = index
-              found = true
+              result_index.set(index)
+              found.make_true
             end
           end
           tasks << task
@@ -208,13 +217,13 @@ module AsyncEnumerable
           end
 
           # If we found something, stop remaining tasks
-          if found
+          if found.true?
             tasks.each(&:stop)
             break
           end
         end
 
-        result_index
+        result_index.get
       end
     end
 
@@ -236,39 +245,39 @@ module AsyncEnumerable
       Sync do |parent|
         # Use a barrier to collect exactly n results
         barrier = ::Async::Barrier.new(parent:)
-        results = []
-        mutex = Mutex.new
+        results = Concurrent::Array.new
 
         @enumerable.each_with_index do |item, index|
           break if index >= n
 
           barrier.async do
-            mutex.synchronize do
-              results[index] = item
-            end
+            results[index] = item
           end
         end
 
         # Wait for all spawned tasks
         barrier.wait
 
-        results
+        # Convert to regular array for compatibility
+        results.to_a
       end
     end
 
+    # TODO: since we can't do this asynchronously, just defer back to the
+    # synchronous version rather than reimplementing synchronously
     def take_while(&block)
       return super unless block_given?
 
       # take_while needs sequential checking, so we can't parallelize
       # Keep the synchronous implementation
-      results = []
+      results = Concurrent::Array.new
 
       @enumerable.each do |item|
         break unless block.call(item)
         results << item
       end
 
-      results
+      results.to_a
     end
 
     # Override lazy to return a non-async lazy enumerator
