@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'benchmark'
-require_relative '../lib/async_enumerable'
+require "benchmark"
+require_relative "../lib/async_enumerable"
 
 # Simulate IO operations with random delays
 def io_operation(n)
@@ -23,46 +23,49 @@ puts
 # Test different array sizes
 [10, 50, 100].each do |size|
   array = (1..size).to_a
-  
+
   puts "\nArray size: #{size} elements"
   puts "-" * 30
-  
+
   Benchmark.bm(15) do |x|
     # Map benchmark
     x.report("sync map:") do
       array.map { |n| io_operation(n) }
     end
-    
+
     x.report("async map:") do
       array.async.map { |n| io_operation(n) }
     end
-    
+
     # Select benchmark
     x.report("sync select:") do
       array.select { |n| expensive_check(n) }
     end
-    
+
     x.report("async select:") do
       array.async.select { |n| expensive_check(n) }
     end
-    
+
     # Any? benchmark (with early termination)
     x.report("sync any?:") do
       array.any? { |n| expensive_check(n) }
     end
-    
+
     x.report("async any?:") do
       array.async.any? { |n| expensive_check(n) }
     end
-    
+
     # Find benchmark (with early termination)
     target = size / 2
     x.report("sync find:") do
       array.find { |n| n == target }
     end
-    
+
     x.report("async find:") do
-      array.async.find { |n| sleep(rand / 1000.0); n == target }
+      array.async.find { |n|
+        sleep(rand / 1000.0)
+        n == target
+      }
     end
   end
 end
