@@ -48,8 +48,8 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#all?" do
       completed = Concurrent::Array.new
       started = Concurrent::AtomicFixnum.new(0)
       
-      # Use a larger dataset to make early termination more observable
-      result = (1..20).to_a.async.all? do |n|
+      # Use a larger dataset with limited concurrency to make early termination observable
+      result = (1..20).to_a.async(max_fibers: 2).all? do |n|
         started.increment
         checked << n
         
