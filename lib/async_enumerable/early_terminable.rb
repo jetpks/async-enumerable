@@ -16,16 +16,16 @@ module AsyncEnumerable
   # @see AsyncEnumerator
   module EarlyTerminable
     # Load all method implementations
-    require_relative "early_terminable/all"
-    require_relative "early_terminable/any"
-    require_relative "early_terminable/none"
-    require_relative "early_terminable/one"
-    require_relative "early_terminable/include"
-    require_relative "early_terminable/find"
-    require_relative "early_terminable/find_index"
-    require_relative "early_terminable/first"
-    require_relative "early_terminable/take"
-    require_relative "early_terminable/take_while"
-    require_relative "early_terminable/lazy"
+    require "async_enumerable/early_terminable/all"
+    require "async_enumerable/early_terminable/any"
+    require "async_enumerable/early_terminable/none"
+    require "async_enumerable/early_terminable/one"
+    require "async_enumerable/early_terminable/include"
+    require "async_enumerable/early_terminable/find"
+    require "async_enumerable/early_terminable/find_index"
+    require "async_enumerable/early_terminable/first"
+    require "async_enumerable/early_terminable/take"
+    require "async_enumerable/early_terminable/take_while"
+    require "async_enumerable/early_terminable/lazy"
   end
 end

@@ -49,6 +49,6 @@ module AsyncEnumerable; end
 
 require "async_enumerable/version"
 require "async_enumerable/early_terminable"
-require "async_enumerable/async"
+require "async_enumerable/async_enumerator"
 
 require "enumerable/async"
