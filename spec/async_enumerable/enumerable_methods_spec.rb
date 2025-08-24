@@ -1,5 +1,13 @@
 require "spec_helper"
 
+# This spec file tests Enumerable methods that aren't directly implemented
+# by AsyncEnumerable. These methods are inherited from Ruby's Enumerable
+# module and work with AsyncEnumerable because we provide an async #each
+# implementation. This validates that our async #each integrates properly
+# with the broader Enumerable ecosystem.
+#
+# Methods with custom async implementations (like all?, any?, find, etc.)
+# are tested in their respective spec files under early_terminable/.
 RSpec.describe "Enumerable methods with async each" do
   let(:array) { [1, 2, 3, 4, 5] }
   let(:async_array) { array.async }
