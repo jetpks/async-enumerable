@@ -18,14 +18,14 @@ module AsyncEnumerable
     # Load all method implementations
     require "async_enumerable/early_terminable/all"
     require "async_enumerable/early_terminable/any"
-    require "async_enumerable/early_terminable/none"
-    require "async_enumerable/early_terminable/one"
-    require "async_enumerable/early_terminable/include"
     require "async_enumerable/early_terminable/find"
     require "async_enumerable/early_terminable/find_index"
     require "async_enumerable/early_terminable/first"
+    require "async_enumerable/early_terminable/include"
+    require "async_enumerable/early_terminable/lazy"
+    require "async_enumerable/early_terminable/none"
+    require "async_enumerable/early_terminable/one"
     require "async_enumerable/early_terminable/take"
     require "async_enumerable/early_terminable/take_while"
-    require "async_enumerable/early_terminable/lazy"
   end
 end
