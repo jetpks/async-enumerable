@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "async/barrier"
-require "concurrent/atomic/atomic_reference"
-
 module AsyncEnumerable
   module EarlyTerminable
     # Asynchronously finds the index of an element that matches.

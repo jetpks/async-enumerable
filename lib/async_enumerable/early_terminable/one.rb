@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "async/barrier"
-require "concurrent/atomic/atomic_fixnum"
-
 module AsyncEnumerable
   module EarlyTerminable
     # Asynchronously checks if exactly one element satisfies the given

@@ -3,6 +3,10 @@
 require "async"
 require "async/barrier"
 require "concurrent"
+require "concurrent/array"
+require "concurrent/atomic/atomic_boolean"
+require "concurrent/atomic/atomic_fixnum"
+require "concurrent/atomic/atomic_reference"
 
 # AsyncEnumerable provides asynchronous, parallel execution capabilities for
 # Ruby's Enumerable.

@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "async/barrier"
-require "concurrent/atomic/atomic_boolean"
-
 module AsyncEnumerable
   module EarlyTerminable
     # Asynchronously checks if any element satisfies the given condition.

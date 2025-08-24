@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "async/barrier"
-require "concurrent/array"
-
 module AsyncEnumerable
   module EarlyTerminable
     # Asynchronously takes the first n elements from the enumerable.
