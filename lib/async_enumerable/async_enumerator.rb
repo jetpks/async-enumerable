@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "async_enumerable/bounded_concurrency"
+
 module AsyncEnumerable
   # AsyncEnumerator is a wrapper class that provides asynchronous
   # implementations of Enumerable methods for parallel execution.
@@ -21,10 +23,16 @@ module AsyncEnumerable
   #   # The preferred way to create an AsyncEnumerator
   #   result = [1, 2, 3].async.map { |n| slow_operation(n) }
   #
+  # @example With custom fiber limit
+  #   huge_dataset.async(max_fibers: 100).map { |n| process(n) }
+  #
   # @see EarlyTerminable
   class AsyncEnumerator
     # Includes standard Enumerable for compatibility and method delegation
     include Enumerable
+
+    # Includes bounded concurrency helper for fiber limit management
+    include BoundedConcurrency
 
     # Includes optimized async implementations of early-terminable methods
     # (all?, any?, none?, one?, include?, find, find_index, first, take, take_while)
@@ -33,13 +41,17 @@ module AsyncEnumerable
     # Creates a new AsyncEnumerator wrapping the given enumerable.
     #
     # @param enumerable [Enumerable] Any object that includes Enumerable
+    # @param max_fibers [Integer, nil] Maximum number of concurrent fibers,
+    #   defaults to AsyncEnumerable.max_fibers
     #
-    # @example
+    # @example Default fiber limit
     #   async_array = AsyncEnumerable::AsyncEnumerator.new([1, 2, 3])
-    #   async_range = AsyncEnumerable::AsyncEnumerator.new(1..100)
-    #   async_hash = AsyncEnumerable::AsyncEnumerator.new({a: 1, b: 2})
-    def initialize(enumerable)
+    #
+    # @example Custom fiber limit
+    #   async_range = AsyncEnumerable::AsyncEnumerator.new(1..100, max_fibers: 50)
+    def initialize(enumerable, max_fibers: nil)
       @enumerable = enumerable
+      @max_fibers = max_fibers
     end
 
     # Returns the wrapped enumerable as an array.
@@ -101,16 +113,12 @@ module AsyncEnumerable
     def each(&block)
       return enum_for(__method__) unless block_given?
 
-      Sync do |parent|
-        barrier = Async::Barrier.new(parent:)
-
+      with_bounded_concurrency do |barrier|
         @enumerable.each do |item|
           barrier.async do
             block.call(item)
           end
         end
-
-        barrier.wait
       end
 
       # Return self to allow chaining, like standard each

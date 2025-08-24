@@ -1,0 +1,17 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation for searching
+  def matches_criteria?(n)
+    sleep(rand / 1000.0)  # 0-1ms delay
+    n == 50  # Will find in the middle
+  end
+  
+  array = (1..100).to_a
+
+benchmark:
+  "Sync find (middle)": |
+    array.find { |n| matches_criteria?(n) }
+  
+  "Async find (middle)": |
+    array.async.find { |n| matches_criteria?(n) }

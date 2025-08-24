@@ -23,11 +23,9 @@ module AsyncEnumerable
       raise ArgumentError, "attempt to take negative size" if n < 0
       return [] if n == 0
 
-      Sync do |parent|
-        # Use a barrier to collect exactly n results
-        barrier = Async::Barrier.new(parent:)
-        results = Concurrent::Array.new
+      results = Concurrent::Array.new
 
+      with_bounded_concurrency do |barrier|
         @enumerable.each_with_index do |item, index|
           break if index >= n
 
@@ -35,13 +33,10 @@ module AsyncEnumerable
             results[index] = item
           end
         end
-
-        # Wait for all spawned tasks
-        barrier.wait
-
-        # Convert to regular array for compatibility
-        results.to_a
       end
+
+      # Convert to regular array for compatibility
+      results.to_a
     end
   end
 end

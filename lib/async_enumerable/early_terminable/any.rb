@@ -30,10 +30,9 @@ module AsyncEnumerable
         return @enumerable.any?
       end
 
-      Sync do |parent|
-        barrier = Async::Barrier.new(parent:)
-        found = Concurrent::AtomicBoolean.new(false)
+      found = Concurrent::AtomicBoolean.new(false)
 
+      with_bounded_concurrency(early_termination: true) do |barrier|
         @enumerable.each do |item|
           break if found.true?
 
@@ -45,16 +44,9 @@ module AsyncEnumerable
             end
           end
         end
-
-        # Wait for all tasks or until barrier is stopped early
-        begin
-          barrier.wait
-        rescue Async::Stop
-          # Expected when barrier.stop is called for early termination
-        end
-
-        found.true?
       end
+
+      found.true?
     end
   end
 end

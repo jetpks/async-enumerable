@@ -1,30 +1,25 @@
 # AsyncEnumerable
 
-AsyncEnumerable extends Ruby's Enumerable module with asynchronous capabilities, allowing you to perform operations in parallel using the [socketry/async](https://github.com/socketry/async) library.
+AsyncEnumerable extends Ruby's Enumerable module with asynchronous
+capabilities, allowing you to perform operations in parallel using the
+[socketry/async](https://github.com/socketry/async) library.
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'async_enumerable'
-```
-
-And then execute:
-
+In your bundler-managed project, run
 ```bash
-bundle install
+bundle add async_enumerable
 ```
 
-Or install it yourself as:
-
+Or to install globally:
 ```bash
 gem install async_enumerable
 ```
 
 ## Usage
 
-AsyncEnumerable adds an `.async` method to any Enumerable object, which returns an AsyncEnumerator that performs operations in parallel:
+AsyncEnumerable adds an `.async` method to any Enumerable object, which returns
+an AsyncEnumerator that performs operations in parallel:
 
 ```ruby
 require 'async_enumerable'
@@ -70,7 +65,8 @@ end
 
 ### Supported Methods
 
-AsyncEnumerable provides async implementations for methods that can benefit from parallel execution:
+AsyncEnumerable provides async implementations for methods that can benefit
+from parallel execution:
 
 #### Iteration
 - `each` - Execute block for each element in parallel
@@ -96,7 +92,6 @@ AsyncEnumerable provides async implementations for methods that can benefit from
 
 AsyncEnumerable is beneficial when:
 - Operations in the block are I/O bound (network requests, file operations)
-- Operations are CPU-intensive and independent
 - You have a large collection with expensive operations per element
 
 AsyncEnumerable may not help (and could be slower) when:
@@ -149,68 +144,72 @@ The gem includes benchmarks that demonstrate the performance characteristics of 
 
 ### Performance Results
 
-When operations involve IO (simulated with 0-1ms delays), async methods show significant performance improvements:
+When operations involve IO (simulated with sleep delays), async methods show significant performance improvements that scale with collection size:
 
-#### Map Operations (100 elements)
-```
-                      user     system      total        real
-sync map:         0.000156   0.000256   0.000412 (  0.063224)
-async map:        0.001232   0.000888   0.002120 (  0.003755)
-```
-**~17x faster** with async when operations involve IO
+#### Collection Size Comparison
 
-#### Select Operations (100 elements)
-```
-                      user     system      total        real
-sync select:      0.000145   0.000276   0.000421 (  0.060473)
-async select:     0.001135   0.000501   0.001636 (  0.003498)
-```
-**~17x faster** with async for filtering operations
+| Collection Size | Sync (i/s) | Async (i/s) | Speedup |
+|----------------|------------|-------------|---------|
+| 10 items       | 159.8      | 924.7       | **5.8x faster** |
+| 100 items      | 15.8       | 325.2       | **20.6x faster** |
+| 1000 items     | 7.8        | 44.7        | **5.8x faster** |
 
-#### Early Termination (any? with 100 elements)
-```
-                      user     system      total        real
-sync any?:        0.000013   0.000030   0.000043 (  0.005060)
-async any?:       0.000627   0.000304   0.000931 (  0.001948)
-```
-**~2.6x faster** even with early termination
+*Note: For 1000+ items, using `max_fibers` can provide additional optimization*
 
-#### Iterations per Second Comparison (benchmark-driver)
-```
-Comparison:
-         async_small:       934.6 i/s 
-        async_medium:       533.0 i/s - 1.75x  slower
-         async_large:       334.6 i/s - 2.79x  slower
-          sync_small:       158.3 i/s - 5.90x  slower
-         sync_medium:        31.6 i/s - 29.54x  slower
-          sync_large:        16.0 i/s - 58.54x  slower
-```
+#### Early Termination Performance
 
-For large collections (100 elements) with IO operations, **async is ~21x faster** than sync.
+Even methods that can terminate early benefit from async execution:
+
+| Method | Scenario | Sync (i/s) | Async (i/s) | Speedup |
+|--------|----------|------------|-------------|---------|
+| `any?` | Early match | 265.5 | 1190.9 | **4.5x faster** |
+| `any?` | Late match | 16.5 | 351.8 | **21.3x faster** |
+| `find` | Middle element | 31.8 | 412.5 | **13.0x faster** |
+
+#### Max Fibers Configuration
+
+For very large collections, limiting concurrent fibers can improve performance:
+
+```ruby
+# Default (1024 fibers max)
+(1..10000).async.map { |n| process(n) }
+
+# Limited to 100 concurrent fibers
+(1..10000).async(max_fibers: 100).map { |n| process(n) }
+
+# Configure global default
+AsyncEnumerable.max_fibers = 100
+```
 
 ### Running Benchmarks
 
 ```bash
-# Run simple comparison benchmark
+# Run detailed benchmarks with organized comparisons
 bundle exec rake benchmark
 
-# Run detailed benchmarks with benchmark-driver
-bundle exec rake benchmark_driver
+# Run quick performance overview
+bundle exec rake benchmark_quick
 
 # Run specific benchmark files
-bundle exec benchmark-driver benchmark/async_map.yml
+bundle exec benchmark-driver benchmark/size_comparison/map_100.yaml
+bundle exec benchmark-driver benchmark/early_termination/any_early.yaml
 ```
 
 ### Benchmark Structure
 
-The benchmarks simulate IO operations using `sleep(rand/1000)` to create 0-1ms delays, similar to real-world IO latency. This helps demonstrate when async operations provide benefits:
+The benchmarks are organized into two categories:
 
-- **async_map.yml** - Parallel transformation of collections
-- **async_select.yml** - Parallel filtering operations
-- **async_any.yml** - Early termination with parallel search
-- **async_find.yml** - Finding elements with early termination
-- **async_all.yml** - Validation with early termination on failure
-- **async_each.yml** - Parallel side effects
+#### Size Comparison Benchmarks (`benchmark/size_comparison/`)
+Compare sync vs async performance across different collection sizes (10, 100, 1000, 10000 items):
+- **map_*.yaml** - Tests parallel transformation performance at different scales
+
+#### Early Termination Benchmarks (`benchmark/early_termination/`)
+Test methods that can stop processing early:
+- **any_early.yaml** - Tests `any?` with early match
+- **any_late.yaml** - Tests `any?` with late match  
+- **find_middle.yaml** - Tests `find` with middle element match
+
+The benchmarks simulate IO operations using scaled sleep delays to demonstrate real-world performance benefits.
 
 ### Writing Custom Benchmarks
 

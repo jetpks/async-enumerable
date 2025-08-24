@@ -1,0 +1,17 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operation for checking
+  def expensive_check(n)
+    sleep(rand / 1000.0)  # 0-1ms delay
+    n > 95  # Will match late in the array
+  end
+  
+  array = (1..100).to_a
+
+benchmark:
+  "Sync any? (late match)": |
+    array.any? { |n| expensive_check(n) }
+  
+  "Async any? (late match)": |
+    array.async.any? { |n| expensive_check(n) }

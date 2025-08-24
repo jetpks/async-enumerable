@@ -1,0 +1,17 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operations with 0-1ms delay
+  def io_operation(n)
+    sleep(rand / 1000.0)
+    n * 2
+  end
+  
+  array = (1..10).to_a
+
+benchmark:
+  "Sync (10 items)": |
+    array.map { |n| io_operation(n) }
+  
+  "Async (10 items)": |
+    array.async.map { |n| io_operation(n) }

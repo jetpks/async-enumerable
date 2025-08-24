@@ -9,11 +9,18 @@ module Enumerable
   # the `socketry/async` library, allowing for significant performance
   # improvements when dealing with I/O-bound operations or large collections.
   #
+  # @param max_fibers [Integer, nil] Maximum number of concurrent fibers,
+  #   defaults to AsyncEnumerable.max_fibers
+  #
   # @example Basic usage with async map
   #   [1, 2, 3].async.map { |n| n * 2 }  # => [2, 4, 6] (executed in parallel)
   #
   # @example Using with I/O operations
   #   urls.async.map { |url| fetch_data(url) }  # Fetches all URLs concurrently
+  #
+  # @example With custom fiber limit
+  #   huge_dataset.async(max_fibers: 100).map { |item| process(item) }
+  #   # Processes with max 100 concurrent fibers
   #
   # @example Chaining async operations
   #   data.async
@@ -26,7 +33,7 @@ module Enumerable
   #   methods
   #
   # @see AsyncEnumerable::AsyncEnumerator
-  def async
-    AsyncEnumerable::AsyncEnumerator.new(self)
+  def async(max_fibers: nil)
+    AsyncEnumerable::AsyncEnumerator.new(self, max_fibers:)
   end
 end

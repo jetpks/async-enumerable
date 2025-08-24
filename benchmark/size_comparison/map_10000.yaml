@@ -1,0 +1,23 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operations with minimal delay for very large collections
+  def io_operation(n)
+    sleep(rand / 50000.0)  # 0-0.02ms
+    n * 2
+  end
+  
+  array = (1..10000).to_a
+
+benchmark:
+  "Sync (10000 items)": |
+    array.map { |n| io_operation(n) }
+  
+  "Async (10000 items)": |
+    array.async.map { |n| io_operation(n) }
+  
+  "Async(100f) (10000 items)": |
+    array.async(max_fibers: 100).map { |n| io_operation(n) }
+  
+  "Async(500f) (10000 items)": |
+    array.async(max_fibers: 500).map { |n| io_operation(n) }

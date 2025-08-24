@@ -1,0 +1,50 @@
+prelude: |
+  require 'async_enumerable'
+  
+  # Simulate IO operations with varying delays
+  # Scale down delay for larger collections to avoid timeouts
+  def io_operation(n, size = 100)
+    delay = case size
+            when 1..100 then rand / 1000.0      # 0-1ms
+            when 101..1000 then rand / 5000.0   # 0-0.2ms
+            else rand / 50000.0                 # 0-0.02ms for 10000
+            end
+    sleep(delay)
+    n * 2
+  end
+  
+  array_10 = (1..10).to_a
+  array_100 = (1..100).to_a
+  array_1000 = (1..1000).to_a
+  array_10000 = (1..10000).to_a
+
+benchmark:
+  sync_10: |
+    array_10.map { |n| io_operation(n, 10) }
+  
+  async_10: |
+    array_10.async.map { |n| io_operation(n, 10) }
+  
+  sync_100: |
+    array_100.map { |n| io_operation(n, 100) }
+  
+  async_100: |
+    array_100.async.map { |n| io_operation(n, 100) }
+  
+  sync_1000: |
+    array_1000.map { |n| io_operation(n, 1000) }
+  
+  async_1000: |
+    array_1000.async.map { |n| io_operation(n, 1000) }
+  
+  async_1000_limited: |
+    array_1000.async(max_fibers: 100).map { |n| io_operation(n, 1000) }
+  
+  sync_10000: |
+    array_10000.map { |n| io_operation(n, 10000) }
+  
+  async_10000: |
+    array_10000.async.map { |n| io_operation(n, 10000) }
+  
+  async_10000_limited: |
+    array_10000.async(max_fibers: 100).map { |n| io_operation(n, 10000) }

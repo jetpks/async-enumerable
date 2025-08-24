@@ -29,10 +29,9 @@ module AsyncEnumerable
     def find(ifnone = nil, &block)
       return super unless block_given?
 
-      Sync do |parent|
-        barrier = Async::Barrier.new(parent:)
-        result = Concurrent::AtomicReference.new(nil)
+      result = Concurrent::AtomicReference.new(nil)
 
+      with_bounded_concurrency(early_termination: true) do |barrier|
         @enumerable.each do |item|
           break unless result.get.nil?
 
@@ -46,20 +45,13 @@ module AsyncEnumerable
             end
           end
         end
+      end
 
-        # Wait for all tasks or until barrier is stopped early
-        begin
-          barrier.wait
-        rescue Async::Stop
-          # Expected when barrier.stop is called for early termination
-        end
-
-        found = result.get
-        if found.nil? && ifnone
-          ifnone.call
-        else
-          found
-        end
+      found = result.get
+      if found.nil? && ifnone
+        ifnone.call
+      else
+        found
       end
     end
 

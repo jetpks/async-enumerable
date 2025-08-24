@@ -35,10 +35,9 @@ module AsyncEnumerable
         return enum_for(__method__)
       end
 
-      Sync do |parent|
-        barrier = Async::Barrier.new(parent:)
-        result_index = Concurrent::AtomicReference.new(nil)
+      result_index = Concurrent::AtomicReference.new(nil)
 
+      with_bounded_concurrency(early_termination: true) do |barrier|
         @enumerable.each_with_index do |item, index|
           break unless result_index.get.nil?
 
@@ -53,16 +52,9 @@ module AsyncEnumerable
             end
           end
         end
-
-        # Wait for all tasks or until barrier is stopped early
-        begin
-          barrier.wait
-        rescue Async::Stop
-          # Expected when barrier.stop is called for early termination
-        end
-
-        result_index.get
       end
+
+      result_index.get
     end
   end
 end

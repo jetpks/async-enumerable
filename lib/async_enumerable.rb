@@ -2,6 +2,7 @@
 
 require "async"
 require "async/barrier"
+require "async/semaphore"
 require "concurrent"
 require "concurrent/array"
 require "concurrent/atomic/atomic_boolean"
@@ -24,6 +25,7 @@ require "concurrent/atomic/atomic_reference"
 # - Optimized early-termination implementations for predicates and find
 #   operations
 # - Full compatibility with standard Enumerable interface
+# - Configurable concurrency limits to prevent unbounded fiber creation
 #
 # ## Usage
 #
@@ -47,9 +49,33 @@ require "concurrent/atomic/atomic_reference"
 #       .reject { |item| item.invalid? }
 #       .to_a
 #
+# @example Configuring maximum fiber limits
+#   # Set global default
+#   AsyncEnumerable.max_fibers = 100
+#
+#   # Or per-instance
+#   huge_dataset.async(max_fibers: 50).map { |item| process(item) }
+#
 # @see Enumerable#async
 # @see AsyncEnumerable::AsyncEnumerator
-module AsyncEnumerable; end
+module AsyncEnumerable
+  class << self
+    # Sets the default maximum number of fibers for async operations.
+    # This limits the number of fibers that can be created concurrently.
+    #
+    # @param limit [Integer] Maximum number of concurrent fibers
+    # @return [Integer] The new limit
+    attr_writer :max_fibers
+
+    # Gets the default maximum number of fibers for async operations.
+    # Defaults to 1024 if not explicitly set.
+    #
+    # @return [Integer] The current maximum fiber limit
+    def max_fibers
+      @max_fibers ||= 1024
+    end
+  end
+end
 
 require "async_enumerable/version"
 require "async_enumerable/early_terminable"
