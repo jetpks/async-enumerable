@@ -23,21 +23,17 @@ module Async
     def initialize(enumerable = [], config = nil, **kwargs)
       @enumerable = enumerable
 
-      if config.is_a?(Hash) && config.key?(:max_fibers) && kwargs.empty?
+      # Handle the common case of Enumerator.new(enumerable, max_fibers: n)
+      if config.is_a?(Hash) && !config.is_a?(Config)
         kwargs = config
         config = nil
       end
 
-      # Config resolution with correct precedence (kwargs > passed config > module config)
-      base_config = Async::Enumerable.config || Config.default
+      # Start with base config (module config or default)
+      base = config || Async::Enumerable.config
 
-      merged_config = if config.is_a?(Config)
-        base_config.with(**config.to_h)
-      else
-        base_config
-      end
-
-      @async_enumerable_config = kwargs.empty? ? merged_config : merged_config.with(**kwargs)
+      # Apply kwargs if any
+      @async_enumerable_config = kwargs.empty? ? base : base.with(**kwargs)
     end
 
     # Executes block for each element in parallel.

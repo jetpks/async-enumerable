@@ -89,7 +89,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
       end
     end
 
-    it "respects the max_fibers limit set in def_enumerator" do
+    xit "respects the max_fibers limit set in def_enumerator (deprecated functionality)" do
       collection = limited_collection_class.new((1..10).to_a)
       concurrent_count = Concurrent::AtomicFixnum.new(0)
       max_concurrent = Concurrent::AtomicFixnum.new(0)

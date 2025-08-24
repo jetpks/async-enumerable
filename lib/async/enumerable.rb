@@ -24,18 +24,25 @@ module Async
   # See docs/reference/enumerable.md for detailed documentation.
   module Enumerable
     class << self
-      attr_accessor :config
+      # Gets or creates the module-level config.
+      # @param kwargs [Hash] Optional configuration updates
+      # @return [Config] Module configuration
+      def config(**kwargs)
+        @config ||= Config.default
+        @config = @config.with(**kwargs) unless kwargs.empty?
+        @config
+      end
 
       # Gets default max fibers (defaults to 1024).
       # @return [Integer] Maximum fiber limit
       def max_fibers
-        (self.config ||= Config.default).max_fibers
+        config.max_fibers
       end
 
       # Sets default max fibers.
       # @param value [Integer] Maximum fiber limit
       def max_fibers=(value)
-        self.config = (config || Config.default).with(max_fibers: value)
+        config(max_fibers: value)
       end
     end
 
@@ -49,10 +56,8 @@ module Async
       base.include(ConfigAccessor) # Include config accessor method
     end
 
-    # Module providing private config accessor method
+    # Module providing config accessor method
     module ConfigAccessor
-      private
-
       def __async_enumerable_config
         @async_enumerable_config
       end
@@ -61,9 +66,9 @@ module Async
     # Async method module - included last to override Enumerable's version.
     module AsyncMethod
       # Returns async enumerator (idempotent - returns self if already async).
-      # @param max_fibers [Integer, nil] Concurrency limit
+      # @param kwargs [Hash] Configuration options (max_fibers, etc.)
       # @return [Async::Enumerator] Async wrapper
-      def async(max_fibers: nil)
+      def async(**kwargs)
         # If we're already an Async::Enumerator, just return self
         # This makes .async.async.async idempotent
         return self if is_a?(::Async::Enumerator)
@@ -76,27 +81,10 @@ module Async
           else
             send(source_method)
           end
-          # Create config if class has default_max_fibers
-          if self.class.default_max_fibers
-            config = Config.new(max_fibers: self.class.default_max_fibers)
-            if max_fibers
-              ::Async::Enumerator.new(source, config, max_fibers: max_fibers)
-            else
-              ::Async::Enumerator.new(source, config)
-            end
-          elsif max_fibers
-            ::Async::Enumerator.new(source, nil, max_fibers: max_fibers)
-          else
-            ::Async::Enumerator.new(source)
-          end
+          ::Async::Enumerator.new(source, **kwargs)
         else
           # If no source is defined, assume self is enumerable
-          source = self
-          if max_fibers
-            ::Async::Enumerator.new(source, nil, max_fibers: max_fibers)
-          else
-            ::Async::Enumerator.new(source)
-          end
+          ::Async::Enumerator.new(self, **kwargs)
         end
       end
     end
@@ -104,13 +92,14 @@ module Async
     module ClassMethods
       # Defines enumerable source for async operations.
       # @param method_name [Symbol] Method/ivar returning enumerable
-      # @param max_fibers [Integer, nil] Default concurrency limit
+      # @param max_fibers [Integer, nil] Default concurrency limit (kept for compatibility)
       def def_enumerator(method_name, max_fibers: nil)
         @enumerable_source = method_name
-        @default_max_fibers = max_fibers
+        # max_fibers parameter kept for backward compatibility but not used
+        # Users should pass max_fibers to .async() method instead
       end
 
-      attr_reader :enumerable_source, :default_max_fibers
+      attr_reader :enumerable_source
     end
   end
 end

@@ -43,23 +43,23 @@ RSpec.describe Async::Enumerable::Config do
   describe "config precedence in Async::Enumerator" do
     before do
       # Reset module config
-      Async::Enumerable.config = nil
+      Async::Enumerable.instance_variable_set(:@config, nil)
     end
 
     after do
       # Clean up
-      Async::Enumerable.config = nil
+      Async::Enumerable.instance_variable_set(:@config, nil)
     end
 
     it "uses module config as base when no config passed" do
-      Async::Enumerable.config = Async::Enumerable::Config.new(max_fibers: 50)
+      Async::Enumerable.config(max_fibers: 50)
       enum = Async::Enumerator.new([1, 2, 3])
 
       expect(enum.instance_variable_get(:@async_enumerable_config).max_fibers).to eq(50)
     end
 
     it "merges passed config over module config" do
-      Async::Enumerable.config = Async::Enumerable::Config.new(max_fibers: 50)
+      Async::Enumerable.config(max_fibers: 50)
       passed_config = Async::Enumerable::Config.new(max_fibers: 100)
       enum = Async::Enumerator.new([1, 2, 3], passed_config)
 
@@ -67,7 +67,7 @@ RSpec.describe Async::Enumerable::Config do
     end
 
     it "kwargs have highest precedence over passed config and module config" do
-      Async::Enumerable.config = Async::Enumerable::Config.new(max_fibers: 50)
+      Async::Enumerable.config(max_fibers: 50)
       passed_config = Async::Enumerable::Config.new(max_fibers: 100)
       enum = Async::Enumerator.new([1, 2, 3], passed_config, max_fibers: 200)
 
