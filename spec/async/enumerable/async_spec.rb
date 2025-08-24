@@ -3,11 +3,11 @@
 require "spec_helper"
 require "async/clock"
 
-RSpec.describe Async::Enumerable::AsyncEnumerator do
+RSpec.describe Async::Enumerator do
   describe "#async" do
-    it "returns an Async::Enumerable::Async instance" do
+    it "returns an Async::Enumerator instance" do
       result = [1, 2, 3].async
-      expect(result).to be_a(Async::Enumerable::AsyncEnumerator)
+      expect(result).to be_a(Async::Enumerator)
     end
   end
 
@@ -20,7 +20,7 @@ RSpec.describe Async::Enumerable::AsyncEnumerator do
 
     it "returns self for chaining" do
       result = [1, 2, 3].async.each { |x| x * 2 }
-      expect(result).to be_a(Async::Enumerable::AsyncEnumerator)
+      expect(result).to be_a(Async::Enumerator)
     end
 
     it "returns enumerator when no block given" do
@@ -82,11 +82,13 @@ RSpec.describe Async::Enumerable::AsyncEnumerator do
 
     it "allows chaining with other async methods" do
       results = []
-      [1, 2, 3].async
+      chain_result = [1, 2, 3].async
         .each { |x| results << x }
         .map { |x| x * 2 }
 
       expect(results.sort).to eq([1, 2, 3])
+      expect(chain_result).to be_a(Async::Enumerator)
+      expect(chain_result.sync).to eq([2, 4, 6])
     end
 
     it "handles empty collections" do
@@ -99,11 +101,20 @@ RSpec.describe Async::Enumerable::AsyncEnumerator do
   # These tests validate behavior specific to map that isn't covered
   # by the generic Enumerable tests or the each tests
   describe "#map" do
-    it "returns an array for set input" do
+    it "returns an Async::Enumerator for chaining" do
       require "set"
       result = Set[1, 2, 3].async.map { |x| x * 2 }
-      expect(result).to be_a(Array)
+      expect(result).to be_a(Async::Enumerator)
       expect(result.sort).to eq([2, 4, 6])
+    end
+
+    it "allows chaining multiple async operations" do
+      result = [1, 2, 3, 4, 5].async
+        .map { |x| x * 2 }
+        .select { |x| x > 4 }
+        .map { |x| x + 1 }
+      expect(result).to be_a(Async::Enumerator)
+      expect(result).to eq([7, 9, 11])
     end
 
     it "returns enumerator when no block given" do
@@ -125,6 +136,67 @@ RSpec.describe Async::Enumerable::AsyncEnumerator do
     it "converts to array" do
       result = (1..3).async.to_a
       expect(result).to eq([1, 2, 3])
+    end
+  end
+
+  describe "#sync" do
+    it "is an alias for to_a" do
+      result = (1..3).async.sync
+      expect(result).to eq([1, 2, 3])
+    end
+
+    it "provides a semantic way to get the wrapped enumerable" do
+      async_enum = [1, 2, 3].async
+      result = async_enum.sync
+      expect(result).to eq([1, 2, 3])
+    end
+
+    it "is useful for getting the enumerable without transformation" do
+      set = Set[1, 2, 3]
+      result = set.async.sync
+      expect(result).to be_a(Array)
+      expect(result.sort).to eq([1, 2, 3])
+    end
+
+    it "works at the end of an async chain" do
+      result = [:foo, :bar, :baz].async
+        .map { |s| s.to_s }
+        .select { |s| s.length == 3 }
+        .map { |s| s.upcase }
+        .sync
+      expect(result).to eq(["FOO", "BAR", "BAZ"])
+    end
+  end
+
+  describe "comparison" do
+    it "equals arrays with same elements" do
+      async_enum = [1, 2, 3].async
+      expect(async_enum).to eq([1, 2, 3])
+      expect(async_enum == [1, 2, 3]).to be true
+    end
+
+    it "does not equal arrays with different elements" do
+      async_enum = [1, 2, 3].async
+      expect(async_enum).not_to eq([1, 2, 4])
+      expect(async_enum == [1, 2, 4]).to be false
+    end
+
+    it "compares correctly with <=>" do
+      async_enum = [1, 2, 3].async
+      expect(async_enum <=> [1, 2, 3]).to eq(0)
+      expect(async_enum <=> [1, 2, 4]).to eq(-1)
+      expect(async_enum <=> [1, 2, 2]).to eq(1)
+    end
+
+    it "works with chained operations" do
+      result = [1, 2, 3].async.map { |x| x * 2 }
+      expect(result).to eq([2, 4, 6])
+    end
+
+    it "allows Comparable methods" do
+      async_enum = [1, 2, 3].async
+      expect(async_enum).to be <= [1, 2, 4]
+      expect(async_enum).to be >= [1, 2, 2]
     end
   end
 end

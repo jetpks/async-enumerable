@@ -28,12 +28,12 @@ module Enumerable
   #       .map { |item| process(item) }
   #       .to_a
   #
-  # @return [Async::Enumerable::AsyncEnumerator] An async wrapper around this
+  # @return [Async::Enumerator] An async wrapper around this
   #   enumerable that provides parallel execution capabilities for enumerable
   #   methods
   #
-  # @see Async::Enumerable::AsyncEnumerator
+  # @see Async::Enumerator
   def async(max_fibers: nil)
-    Async::Enumerable::AsyncEnumerator.new(self, max_fibers:)
+    Async::Enumerator.new(self, max_fibers:)
   end
 end

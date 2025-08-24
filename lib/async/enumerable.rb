@@ -57,7 +57,7 @@ module Async
   #   huge_dataset.async(max_fibers: 50).map { |item| process(item) }
   #
   # @see Enumerable#async
-  # @see Async::Enumerable::AsyncEnumerator
+  # @see Async::Enumerator
   module Enumerable
     class << self
       # Sets the default maximum number of fibers for async operations.
@@ -80,6 +80,6 @@ end
 
 require "async/enumerable/version"
 require "async/enumerable/early_terminable"
-require "async/enumerable/async_enumerator"
+require "async/enumerator"
 
 require "enumerable/async"

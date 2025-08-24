@@ -102,6 +102,36 @@ Some methods are inherently sequential and are delegated back to the wrapped enu
 - `take_while` - Must evaluate elements in order
 - `lazy` - Returns a standard lazy enumerator (lazy evaluation uses break internally, incompatible with async)
 
+### Method Chaining
+
+Async::Enumerator maintains the async context through method chains. Transformation methods like `map`, `select`, and `reject` return new `Async::Enumerator` instances, allowing you to chain multiple operations while staying in "async land":
+
+```ruby
+# Chain stays async until .sync
+result = [1, 2, 3, 4, 5].async
+                        .map { |x| expensive_operation(x) }    # Returns Async::Enumerator
+                        .select { |x| x > threshold }          # Returns Async::Enumerator
+                        .map { |x| transform(x) }              # Returns Async::Enumerator
+                        .sync                                   # Returns Array
+
+# The .sync method explicitly converts back to an array
+data = urls.async
+           .map { |url| fetch_data(url) }
+           .select { |data| data.valid? }
+           .sync  # Get final results as array
+```
+
+Async::Enumerator also implements comparison operators, so it can be compared directly with arrays:
+
+```ruby
+# Equality comparison works without .sync
+async_result = [1, 2, 3].async.map { |x| x * 2 }
+async_result == [2, 4, 6]  # => true
+
+# This makes testing clean and simple
+expect(data.async.select { |x| x.valid? }).to eq(expected_valid_items)
+```
+
 ### When to Use Async
 
 Async::Enumerable is beneficial when:

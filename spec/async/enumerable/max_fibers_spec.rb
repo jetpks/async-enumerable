@@ -19,7 +19,7 @@ RSpec.describe "Async::Enumerable max_fibers" do
   describe "per-instance configuration" do
     it "accepts max_fibers parameter in async method" do
       enum = [1, 2, 3].async(max_fibers: 10)
-      expect(enum).to be_a(Async::Enumerable::AsyncEnumerator)
+      expect(enum).to be_a(Async::Enumerator)
     end
 
     it "uses instance-level max_fibers over module default" do
