@@ -15,7 +15,7 @@ require "concurrent"
 #
 # - Parallel execution of enumerable methods
 # - Thread-safe operation with atomic variables
-# - Optimized short-circuit implementations for predicates and find operations
+# - Optimized early-termination implementations for predicates and find operations
 # - Full compatibility with standard Enumerable interface
 #
 # ## Usage
@@ -29,7 +29,7 @@ require "concurrent"
 #   results = urls.async.map { |url| fetch_data(url) }
 #   # All URLs fetched concurrently
 #
-# @example Short-circuit optimization
+# @example Early termination optimization
 #   large_array.async.any? { |item| expensive_check(item) }
 #   # Stops as soon as one item returns true
 #
@@ -47,7 +47,7 @@ module AsyncEnumerable; end
 require "async_enumerable/version"
 require "async_enumerable/errors"
 require "async_enumerable/each"
-require "async_enumerable/short_circuit"
+require "async_enumerable/early_terminable"
 require "async_enumerable/async"
 
 require "enumerable/async"

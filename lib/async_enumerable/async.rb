@@ -6,7 +6,7 @@ module AsyncEnumerable
   #
   # This class wraps any Enumerable object and provides async versions of standard
   # enumerable methods. It includes the standard Enumerable module for compatibility,
-  # as well as specialized async implementations through the Each and ShortCircuit modules.
+  # as well as specialized async implementations through the Each and EarlyTerminable modules.
   #
   # The AsyncEnumerator maintains a reference to the original enumerable and delegates
   # method calls while providing concurrent execution capabilities through the async runtime.
@@ -20,7 +20,7 @@ module AsyncEnumerable
   #   result = [1, 2, 3].async.map { |n| slow_operation(n) }
   #
   # @see Each
-  # @see ShortCircuit
+  # @see EarlyTerminable
   class AsyncEnumerator
     # Includes standard Enumerable for compatibility and method delegation
     include Enumerable
@@ -28,9 +28,9 @@ module AsyncEnumerable
     # Includes async implementation of #each method for parallel iteration
     include Each
 
-    # Includes optimized async implementations of short-circuit methods
+    # Includes optimized async implementations of early-terminable methods
     # (all?, any?, none?, one?, include?, find, find_index, first, take, take_while)
-    include ShortCircuit
+    include EarlyTerminable
 
     # Creates a new AsyncEnumerator wrapping the given enumerable.
     #

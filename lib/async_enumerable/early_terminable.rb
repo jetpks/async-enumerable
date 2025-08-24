@@ -7,7 +7,7 @@ require "concurrent/atomic/atomic_fixnum"
 require "concurrent/array"
 
 module AsyncEnumerable
-  # ShortCircuit module provides optimized asynchronous implementations for
+  # EarlyTerminable module provides optimized asynchronous implementations for
   # enumerable methods that can terminate early.
   #
   # This module includes async versions of predicate methods (all?, any?, none?, one?),
@@ -20,7 +20,7 @@ module AsyncEnumerable
   # Async::Barrier#stop method is used to cancel remaining tasks once a result is found.
   #
   # @see AsyncEnumerator
-  module ShortCircuit
+  module EarlyTerminable
     # @!group Predicate Methods
 
     # Asynchronously checks if all elements satisfy the given condition.
