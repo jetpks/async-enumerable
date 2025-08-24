@@ -5,23 +5,21 @@ module Async
     module Methods
       # Iterators module for enumerable iteration helper methods.
       #
-      # Currently, iteration helper methods are inherited from the standard
-      # Enumerable module. These methods are inherently sequential and don't
-      # benefit from async execution as they need to maintain order or state.
+      # Iteration helper methods are inherited from the standard Enumerable
+      # module. When used with async enumerables, these methods build on our
+      # async #each implementation, though some maintain sequential semantics
+      # where required by their nature.
       #
       # Methods available through Enumerable:
-      # - each_with_index: Iterates with index
-      # - each_with_object: Iterates with an accumulator object
-      # - each_cons: Iterates over consecutive n-element slices
-      # - each_slice: Iterates over n-element slices
-      # - cycle: Cycles through elements repeatedly
+      # - each_with_index: Iterates with index (block executes async)
+      # - each_with_object: Iterates with an accumulator object (block executes async)
+      # - each_cons: Iterates over consecutive n-element slices (maintains order)
+      # - each_slice: Iterates over n-element slices (block executes async per slice)
+      # - cycle: Cycles through elements repeatedly (block executes async)
       # - with_index: Adds index to any enumerator
-      #
-      # These methods work correctly with async enumerables but execute
-      # sequentially as their semantics require ordered processing.
       module Iterators
-        # This module is intentionally empty as iteration methods
-        # are inherited from Enumerable
+        # This module is intentionally empty as iteration methods are
+        # inherited from Enumerable and automatically use our async #each
       end
     end
   end
