@@ -2,6 +2,31 @@
 
 require "spec_helper"
 
+# Test class for real-world example specs
+class TestTodoList
+  include Async::Enumerable
+  def_enumerator :todos
+
+  Todo = Struct.new(:title, :completed, keyword_init: true)
+
+  def initialize
+    @todos = []
+  end
+
+  def add(title)
+    @todos << Todo.new(title: title, completed: false)
+    self
+  end
+
+  def complete(title)
+    todo = @todos.find { |t| t.title == title }
+    todo&.completed = true
+    self
+  end
+
+  attr_reader :todos
+end
+
 RSpec.describe "Async::Enumerable includable pattern" do
   describe "basic inclusion" do
     let(:collection_class) do
@@ -152,32 +177,8 @@ RSpec.describe "Async::Enumerable includable pattern" do
   end
 
   describe "real-world example: TodoList" do
-    class TodoList
-      include Async::Enumerable
-      def_enumerator :todos
-
-      Todo = Struct.new(:title, :completed, keyword_init: true)
-
-      def initialize
-        @todos = []
-      end
-
-      def add(title)
-        @todos << Todo.new(title: title, completed: false)
-        self
-      end
-
-      def complete(title)
-        todo = @todos.find { |t| t.title == title }
-        todo&.completed = true
-        self
-      end
-
-      attr_reader :todos
-    end
-
     it "can process todos asynchronously" do
-      list = TodoList.new
+      list = TestTodoList.new
       list.add("Buy milk")
         .add("Write code")
         .add("Review PR")
@@ -193,7 +194,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
     end
 
     it "can check if all todos are completed" do
-      list = TodoList.new
+      list = TestTodoList.new
       list.add("Task 1").complete("Task 1")
       list.add("Task 2").complete("Task 2")
 
