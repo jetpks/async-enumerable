@@ -36,9 +36,9 @@ RSpec.describe "Async::Enumerable includable pattern" do
     it "supports chaining async operations" do
       collection = collection_class.new([1, 2, 3, 4, 5])
       result = collection.async
-                        .select { |x| x > 2 }
-                        .map { |x| x * 2 }
-                        .sync
+        .select { |x| x > 2 }
+        .map { |x| x * 2 }
+        .sync
       expect(result).to eq([6, 8, 10])
     end
 
@@ -145,7 +145,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
     it "works with custom methods that modify the collection" do
       collection = custom_class.new
       collection.add("foo").add("bar").add("baz")
-      
+
       result = collection.async.map(&:upcase).sync
       expect(result).to eq(["FOO", "BAR", "BAZ"])
     end
@@ -179,15 +179,15 @@ RSpec.describe "Async::Enumerable includable pattern" do
     it "can process todos asynchronously" do
       list = TodoList.new
       list.add("Buy milk")
-          .add("Write code")
-          .add("Review PR")
-          .complete("Write code")
+        .add("Write code")
+        .add("Review PR")
+        .complete("Write code")
 
       # Get all incomplete todos
       incomplete = list.async
-                      .reject { |todo| todo.completed }
-                      .map { |todo| todo.title }
-                      .sync
+        .reject { |todo| todo.completed }
+        .map { |todo| todo.title }
+        .sync
 
       expect(incomplete).to eq(["Buy milk", "Review PR"])
     end
