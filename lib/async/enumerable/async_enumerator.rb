@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require "async/enumerable/bounded_concurrency"
 
 module Async
@@ -29,9 +30,13 @@ module Async
     #
     # @see EarlyTerminable
     class AsyncEnumerator
+      extend Forwardable
       include ::Enumerable
       include BoundedConcurrency
       include EarlyTerminable
+
+      # Delegate methods that are inherently sequential back to the wrapped enumerable
+      def_delegators :@enumerable, :first, :take, :take_while, :lazy
 
       # Creates a new Async::Enumerator wrapping the given enumerable.
       #

@@ -65,28 +65,42 @@ end
 
 ### Supported Methods
 
-Async::Enumerable provides async implementations for methods that can benefit
-from parallel execution:
+Async::Enumerable supports **all** Enumerable methods through different strategies:
 
-#### Iteration
-- `each` - Execute block for each element in parallel
+#### Methods with Async Implementations
 
-#### Short-Circuit Methods (with early termination)
+Most Enumerable methods work automatically through the async implementation of `each`:
+- `map`, `select`, `reject`, `collect`, `filter`, `filter_map`
+- `reduce`, `inject`, `sum`, `min`, `max`, `minmax`
+- `count`, `tally`, `group_by`, `partition`
+- `sort`, `sort_by`, `uniq`, `compact`
+- `to_a`, `to_h`, `entries`
+- `each_with_index`, `each_with_object`, `with_index`
+- `zip`, `cycle`, `chunk`, `slice_*`
+
+These methods automatically benefit from parallel execution when blocks contain
+I/O or expensive operations.
+
+#### Methods with Optimized Early Termination
+
+The EarlyTerminable module provides optimized implementations that stop
+processing as soon as the result is determined:
+
 - `all?` - Returns true if all elements match (stops on first false)
 - `any?` - Returns true if any element matches (stops on first true)
 - `none?` - Returns true if no elements match (stops on first true)
 - `one?` - Returns true if exactly one element matches
 - `include?` / `member?` - Check if collection includes a value
-- `find` / `detect` - Find first matching element
-- `find_index` - Find index of first matching element
+- `find` / `detect` - Find first matching element*
+- `find_index` - Find index of matching element*
 
-#### Collection Methods
-- `first(n)` - Get first n elements
-- `take(n)` - Take first n elements
+#### Methods Delegated to Synchronous Implementation
 
-#### Methods that delegate to synchronous implementation
-- `take_while` - Sequential by nature, cannot be parallelized
-- `lazy` - Returns a standard lazy enumerator
+Some methods are inherently sequential and are delegated back to the wrapped enumerable:
+- `first` - Takes elements from the beginning
+- `take` - Takes first n elements
+- `take_while` - Must evaluate elements in order
+- `lazy` - Returns a standard lazy enumerator (lazy evaluation uses break internally, incompatible with async)
 
 ### When to Use Async
 

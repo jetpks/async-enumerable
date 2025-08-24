@@ -6,10 +6,9 @@ module Async
     # for enumerable methods that can terminate early.
     #
     # This module includes async versions of predicate methods (all?, any?,
-    # none?, one?), find operations (find, find_index, include?), and take
-    # operations (first, take, take_while). These methods are optimized to stop
-    # processing as soon as the result is determined, avoiding unnecessary
-    # computation.
+    # none?, one?) and find operations (find, find_index, include?). These
+    # methods are optimized to stop processing as soon as the result is
+    # determined, avoiding unnecessary computation.
     #
     # The implementations use atomic variables from the concurrent-ruby gem to
     # ensure thread-safe operation when multiple async tasks are running
@@ -23,12 +22,9 @@ module Async
       require "async/enumerable/early_terminable/any"
       require "async/enumerable/early_terminable/find"
       require "async/enumerable/early_terminable/find_index"
-      require "async/enumerable/early_terminable/first"
       require "async/enumerable/early_terminable/include"
-      require "async/enumerable/early_terminable/lazy"
       require "async/enumerable/early_terminable/none"
       require "async/enumerable/early_terminable/one"
-      require "async/enumerable/early_terminable/take"
       require "async/enumerable/early_terminable/take_while"
     end
   end
