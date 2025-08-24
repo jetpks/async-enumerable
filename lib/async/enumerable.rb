@@ -3,14 +3,15 @@
 require "async"
 require "async/barrier"
 require "async/semaphore"
+
 require "concurrent/array"
 require "concurrent/atomic/atomic_boolean"
 require "concurrent/atomic/atomic_fixnum"
 require "concurrent/atomic/atomic_reference"
 
-require "async/enumerable/version"
 require "async/enumerable/fiber_limiter"
 require "async/enumerable/methods"
+require "async/enumerable/version"
 require "async/enumerator"
 require "enumerable/async"
 

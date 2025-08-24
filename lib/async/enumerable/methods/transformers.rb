@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
-require "async/enumerable/methods/transformers/map"
-require "async/enumerable/methods/transformers/select"
-require "async/enumerable/methods/transformers/reject"
+require "async/enumerable/methods/transformers/compact"
 require "async/enumerable/methods/transformers/filter_map"
 require "async/enumerable/methods/transformers/flat_map"
-require "async/enumerable/methods/transformers/compact"
-require "async/enumerable/methods/transformers/uniq"
+require "async/enumerable/methods/transformers/map"
+require "async/enumerable/methods/transformers/reject"
+require "async/enumerable/methods/transformers/select"
+
 require "async/enumerable/methods/transformers/sort"
 require "async/enumerable/methods/transformers/sort_by"
+require "async/enumerable/methods/transformers/uniq"
 
 module Async
   module Enumerable
@@ -16,15 +17,16 @@ module Async
       # Transformers contains async implementations of enumerable transformation methods
       # that transform collections into new collections.
       module Transformers
-        include Map
-        include Select
-        include Reject
+        include Compact
         include FilterMap
         include FlatMap
-        include Compact
-        include Uniq
+        include Map
+        include Reject
+        include Select
+
         include Sort
         include SortBy
+        include Uniq
       end
     end
   end
