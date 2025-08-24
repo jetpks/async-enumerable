@@ -25,7 +25,7 @@ task :benchmark_quick do
     n % 10 == 0
   end
 
-  puts "AsyncEnumerable Benchmark Comparison"
+  puts "Async::Enumerable Benchmark Comparison"
   puts "=" * 50
   puts "Simulating IO operations with 0-1ms delays"
   puts
@@ -96,7 +96,7 @@ end
 desc "Run detailed benchmarks with clear comparisons"
 task :benchmark do
   puts "=" * 80
-  puts "AsyncEnumerable Benchmarks"
+  puts "Async::Enumerable Benchmarks"
   puts "=" * 80
   puts
 
