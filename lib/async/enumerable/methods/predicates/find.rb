@@ -6,6 +6,9 @@ module Async
       module Predicates
         module Find
           # Returns first element that satisfies condition (parallel, early termination).
+          # @note Returns the **fastest completing** match, not necessarily the first by position.
+          #   Due to parallel execution, whichever element completes evaluation first will be returned.
+          #   Use synchronous `find` if positional order matters.
           # @yield [item] Test condition for each element
           # @return [Object, nil] First matching element or nil
           def find(ifnone = nil, &block)

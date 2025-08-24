@@ -130,8 +130,10 @@ processing as soon as the result is determined:
 - `none?` - Returns true if no elements match (stops on first true)
 - `one?` - Returns true if exactly one element matches
 - `include?` / `member?` - Check if collection includes a value
-- `find` / `detect` - Find first matching element*
-- `find_index` - Find index of matching element*
+- `find` / `detect` - Find first matching element *
+- `find_index` - Find index of matching element *
+
+**\* Important:** `find` and `find_index` return the **fastest completing** result, not necessarily the **first** element in order. See [Parallel Execution Behavior](#parallel-execution-behavior) below.
 
 #### Methods Delegated to Synchronous Implementation
 
@@ -196,15 +198,63 @@ class CustomAsync
 end
 ```
 
+### Parallel Execution Behavior
+
+Due to the parallel nature of async operations, some methods behave differently than their synchronous counterparts:
+
+#### Find and Find_index Return Fastest Result
+
+When using `find`, `detect`, or `find_index` with async enumeration, the result returned is the **first to complete evaluation**, not necessarily the first element in the collection order:
+
+```ruby
+# Synchronous - always returns 3 (first element > 2)
+[1, 2, 3, 4, 5].find { |n| n > 2 }  # => 3
+
+# Async - returns whichever completes first
+[1, 2, 3, 4, 5].async.find { |n| 
+  sleep(6 - n)  # Element 5 completes first
+  n > 2 
+}  # => Could be 3, 4, or 5 (likely 5 due to shorter sleep)
+```
+
+This is a performance optimization - as soon as any matching element is found, the search terminates immediately without waiting for earlier elements to complete.
+
+#### When Order Matters
+
+If you need the **first element by position** rather than the **fastest to evaluate**, you have several options:
+
+```ruby
+# Option 1: Use synchronous enumeration
+collection.find { |item| expensive_check(item) }
+
+# Option 2: Process in order then find
+collection.async.map { |item| [item, expensive_check(item)] }
+          .find { |item, result| result }
+          &.first
+
+# Option 3: Use with_index to track position
+matches = collection.async.filter_map.with_index do |item, index|
+  expensive_check(item) ? [index, item] : nil
+end
+first_match = matches.min_by { |index, _| index }&.last
+```
+
+This behavior applies to:
+- `find` / `detect` - Returns fastest matching element
+- `find_index` - Returns index of fastest matching element
+
+Other predicates like `all?`, `any?`, `none?`, `one?`, and `include?` return boolean values, so the order doesn't affect the result.
+
 ### When to Use Async
 
 Async::Enumerable is beneficial when:
 - Operations in the block are I/O bound (network requests, file operations)
 - You have a large collection with expensive operations per element
+- The order of results doesn't matter, or you're collecting all results
 
 Async::Enumerable may not help (and could be slower) when:
 - Operations are very fast/simple
-- Order of execution matters
+- Order of execution matters (for find/find_index)
 - Operations depend on previous results
 - The overhead of concurrency exceeds the operation cost
 

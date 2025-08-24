@@ -6,6 +6,9 @@ module Async
       module Predicates
         module FindIndex
           # Returns index of first matching element (parallel, early termination).
+          # @note Returns the index of the **fastest completing** match, not necessarily the first by position.
+          #   Due to parallel execution, whichever element completes evaluation first will have its index returned.
+          #   Use synchronous `find_index` if positional order matters.
           # @param value [Object] Value to find or omit for block form
           # @return [Integer, nil] Index of first match or nil
           def find_index(value = (no_value = true), &block)
