@@ -5,25 +5,9 @@ module Async
     module Methods
       module Predicates
         module Any
-          # Asynchronously checks if any element satisfies the given condition.
-          #
-          # Executes the block for each element in parallel and returns true as
-          # soon as any element returns a truthy value. Short-circuits and stops
-          # processing remaining elements once a match is found.
-          #
-          # @yield [item] Block to test each element
-          # @yieldparam item Each element from the enumerable
-          # @yieldreturn [Boolean] Whether the element satisfies the condition
-          #
-          # @return [Boolean] true if any element satisfies the condition, false
-          #   otherwise
-          # @example Check if any number is negative
-          #   [1, 2, -3].async.any? { |n| n < 0 }  # => true (stops after -3)
-          #   [1, 2, 3].async.any? { |n| n < 0 }   # => false
-          #
-          # @example With API calls
-          #   servers.async.any? { |server| server_responding?(server) }
-          #   # Checks all servers in parallel, returns true on first response
+          # Returns true if any element satisfies the condition (parallel, early termination).
+          # @yield [item] Test condition for each element
+          # @return [Boolean] true if any element matches
           def any?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern

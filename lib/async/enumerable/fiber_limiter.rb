@@ -2,30 +2,15 @@
 
 module Async
   module Enumerable
-    # FiberLimiter provides a helper method for executing async
-    # operations with a maximum fiber limit to prevent unbounded concurrency.
-    #
-    # This module is included in Async::Enumerator and Async::Enumerable to
-    # provide a consistent way to limit the number of concurrent fibers created
-    # during async operations. It uses Async::Semaphore to enforce the fiber limit.
-    #
+    # Provides bounded concurrency control for async operations.
+    # See docs/reference/fiber_limiter.md for detailed documentation.
     # @api private
     module FiberLimiter
       private
 
-      # Executes a block with bounded concurrency using a semaphore.
-      #
-      # This method sets up an Async::Semaphore to limit the number of
-      # concurrent fibers, creates a barrier under that semaphore, and yields
-      # the barrier to the block for spawning async tasks.
-      #
-      # @param early_termination [Boolean] Whether the operation supports
-      #   early termination (expects Async::Stop exceptions)
-      #
-      # @yield [barrier] Gives the barrier to use for spawning async tasks
-      # @yieldparam barrier [Async::Barrier] The barrier for spawning tasks
-      #
-      # @return The result of the block
+      # Executes block with bounded concurrency.
+      # @param early_termination [Boolean] Support early stop
+      # @yield [barrier] Barrier for spawning async tasks
       def with_bounded_concurrency(early_termination: false, &block)
         Sync do |parent|
           semaphore = Async::Semaphore.new(max_fibers, parent:)
@@ -47,10 +32,8 @@ module Async
         end
       end
 
-      # Gets the maximum number of fibers for this instance.
-      # Falls back to the module default if not set on the instance.
-      #
-      # @return [Integer] The maximum number of concurrent fibers
+      # Gets max fibers (instance or global default).
+      # @return [Integer] Maximum concurrent fibers
       def max_fibers
         @max_fibers || Async::Enumerable.max_fibers
       end
