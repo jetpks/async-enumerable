@@ -8,7 +8,7 @@ module Async
           # Async version of reject that returns an Async::Enumerator for chaining
           def reject(&block)
             return enum_for(__method__) unless block_given?
-            self.class.new(super, max_fibers: @max_fibers)
+            self.class.new(super, @async_enumerable_config)
           end
         end
       end

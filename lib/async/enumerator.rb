@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "forwardable"
+require "async/enumerable/config"
 require "async/enumerable/fiber_limiter"
 require "async/enumerable/methods"
 
@@ -17,10 +18,31 @@ module Async
 
     # Creates async wrapper for enumerable.
     # @param enumerable [Enumerable] Object to wrap
-    # @param max_fibers [Integer, nil] Concurrency limit
-    def initialize(enumerable, max_fibers: nil)
+    # @param config [Config, nil] Configuration object
+    # @param kwargs [Hash] Configuration options (max_fibers, etc.)
+    def initialize(enumerable = [], config = nil, **kwargs)
       @enumerable = enumerable
-      @max_fibers = max_fibers
+
+      # Handle backward compatibility - if config looks like old max_fibers keyword arg
+      if config.is_a?(Hash) && config.key?(:max_fibers) && kwargs.empty?
+        kwargs = config
+        config = nil
+      end
+
+      # Config resolution with correct precedence (kwargs > passed config > module config)
+      # Start with module config as base
+      base_config = Async::Enumerable.config || Config.default
+
+      # Merge with passed config if provided
+      merged_config = if config.is_a?(Config)
+        # Merge the passed config values into base config
+        base_config.with(**config.to_h)
+      else
+        base_config
+      end
+
+      # Apply kwargs last (highest precedence)
+      @async_enumerable_config = kwargs.empty? ? merged_config : merged_config.with(**kwargs)
     end
 
     # Executes block for each element in parallel.

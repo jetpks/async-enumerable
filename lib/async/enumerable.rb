@@ -14,6 +14,7 @@ module Async
   end
 end
 
+require "async/enumerable/config"
 require "async/enumerable/fiber_limiter"
 require "async/enumerable/methods"
 require "async/enumerable/version"
@@ -25,12 +26,18 @@ module Async
     DEFAULT_MAX_FIBERS = 1024
 
     class << self
-      attr_writer :max_fibers
+      attr_accessor :config
 
       # Gets default max fibers (defaults to 1024).
       # @return [Integer] Maximum fiber limit
       def max_fibers
-        @max_fibers ||= DEFAULT_MAX_FIBERS
+        config&.max_fibers || DEFAULT_MAX_FIBERS
+      end
+
+      # Sets default max fibers.
+      # @param value [Integer] Maximum fiber limit
+      def max_fibers=(value)
+        self.config = (config || Config.default).with(max_fibers: value)
       end
     end
 
@@ -41,6 +48,15 @@ module Async
       base.include(Methods)      # Include all method groups
       base.include(FiberLimiter) # Include fiber limiting functionality
       base.include(AsyncMethod)  # Include async method last to override Enumerable's
+
+      # Initialize config instance variable for Async::Enumerator
+      # (not for other classes that include this module)
+      if base == ::Async::Enumerator
+        base.class_eval do
+          # This will be set in initialize, but we define it here for clarity
+          @async_enumerable_config = nil
+        end
+      end
     end
 
     # Async method module - included last to override Enumerable's version.
@@ -61,13 +77,28 @@ module Async
           else
             send(source_method)
           end
-          fiber_limit = max_fibers || self.class.default_max_fibers
+          # Create config if class has default_max_fibers
+          if self.class.default_max_fibers
+            config = Config.new(max_fibers: self.class.default_max_fibers)
+            if max_fibers
+              ::Async::Enumerator.new(source, config, max_fibers: max_fibers)
+            else
+              ::Async::Enumerator.new(source, config)
+            end
+          elsif max_fibers
+            ::Async::Enumerator.new(source, nil, max_fibers: max_fibers)
+          else
+            ::Async::Enumerator.new(source)
+          end
         else
           # If no source is defined, assume self is enumerable
           source = self
-          fiber_limit = max_fibers
+          if max_fibers
+            ::Async::Enumerator.new(source, nil, max_fibers: max_fibers)
+          else
+            ::Async::Enumerator.new(source)
+          end
         end
-        ::Async::Enumerator.new(source, max_fibers: fiber_limit)
       end
     end
 

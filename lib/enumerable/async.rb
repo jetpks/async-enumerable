@@ -34,6 +34,10 @@ module Enumerable
   #
   # @see Async::Enumerator
   def async(max_fibers: nil)
-    Async::Enumerator.new(self, max_fibers:)
+    if max_fibers
+      Async::Enumerator.new(self, nil, max_fibers: max_fibers)
+    else
+      Async::Enumerator.new(self)
+    end
   end
 end

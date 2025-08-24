@@ -7,7 +7,7 @@ module Async
         module Sort
           # Async version of sort that returns an Async::Enumerator for chaining
           def sort(&block)
-            self.class.new(super, max_fibers: @max_fibers)
+            self.class.new(super, @async_enumerable_config)
           end
         end
       end
