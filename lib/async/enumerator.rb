@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require "forwardable"
-require "async/enumerable/bounded_concurrency"
+require "async/enumerable/fiber_limiter"
+require "async/enumerable/methods"
 
 module Async
   # Enumerator is a wrapper class that provides asynchronous
@@ -27,13 +28,13 @@ module Async
   # @example With custom fiber limit
   #   huge_dataset.async(max_fibers: 100).map { |n| process(n) }
   #
-  # @see Enumerable::EarlyTerminable
+  # @see Enumerable::Methods
   class Enumerator
     extend Forwardable
     include ::Enumerable
     include Comparable
-    include Enumerable::BoundedConcurrency
-    include Enumerable::EarlyTerminable
+    include Enumerable::Methods      # All async method implementations
+    include Enumerable::FiberLimiter # Fiber limiting functionality
 
     # Delegate methods that are inherently sequential back to the wrapped enumerable
     def_delegators :@enumerable, :first, :take, :take_while, :lazy, :size, :length
@@ -54,41 +55,6 @@ module Async
       @enumerable = enumerable
       @max_fibers = max_fibers
     end
-
-    # Returns the wrapped enumerable as an array.
-    #
-    # This method simply converts the wrapped enumerable to an array without
-    # any async processing. Note that async operations like map and select
-    # already return arrays.
-    #
-    # @return [Array] The wrapped enumerable converted to an array
-    #
-    # @example
-    #   async_enum = (1..3).async
-    #   async_enum.to_a  # => [1, 2, 3]
-    #
-    # @example Converting a Set
-    #   async_set = Set[1, 2, 3].async
-    #   async_set.to_a  # => [1, 2, 3] (order may vary)
-    def to_a
-      @enumerable.to_a
-    end
-
-    # Synchronizes the async enumerable back to a regular array.
-    # This is an alias for #to_a that provides a more semantic way to
-    # end an async chain and get the results.
-    #
-    # @return [Array] The wrapped enumerable converted to an array
-    #
-    # @example Chaining with sync
-    #   result = [:foo, :bar].async
-    #                        .map { |sym| fetch_data(sym) }
-    #                        .sync
-    #   # => [<data for :foo>, <data for :bar>]
-    #
-    # @example Alternative to to_a
-    #   data.async.select { |x| x.valid? }.sync  # same as .to_a
-    alias_method :sync, :to_a
 
     # Asynchronously iterates over each element in the enumerable, executing
     # the given block in parallel for each item.
@@ -171,62 +137,5 @@ module Async
       to_a == other.to_a
     end
     alias_method :eql?, :==
-
-    # Override transformation methods to return Async::Enumerator for chaining
-
-    # Async version of map that returns an Async::Enumerator for chaining
-    def map(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-    alias_method :collect, :map
-
-    # Async version of select that returns an Async::Enumerator for chaining
-    def select(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-    alias_method :filter, :select
-    alias_method :find_all, :select
-
-    # Async version of reject that returns an Async::Enumerator for chaining
-    def reject(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-
-    # Async version of filter_map that returns an Async::Enumerator for chaining
-    def filter_map(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-
-    # Async version of flat_map that returns an Async::Enumerator for chaining
-    def flat_map(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-    alias_method :collect_concat, :flat_map
-
-    # Async version of compact that returns an Async::Enumerator for chaining
-    def compact
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-
-    # Async version of uniq that returns an Async::Enumerator for chaining
-    def uniq(&block)
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-
-    # Async version of sort that returns an Async::Enumerator for chaining
-    def sort(&block)
-      self.class.new(super, max_fibers: @max_fibers)
-    end
-
-    # Async version of sort_by that returns an Async::Enumerator for chaining
-    def sort_by(&block)
-      return enum_for(__method__) unless block_given?
-      self.class.new(super, max_fibers: @max_fibers)
-    end
   end
 end
