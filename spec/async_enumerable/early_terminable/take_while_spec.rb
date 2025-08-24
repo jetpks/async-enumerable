@@ -114,10 +114,10 @@ RSpec.describe "AsyncEnumerable::EarlyTerminable#take_while" do
       # Since take_while must be sequential, we just delegate to @enumerable
       enumerable = (1..10).to_a
       async_enum = enumerable.async
-      
+
       result = async_enum.take_while { |n| n < 5 }
       expected = enumerable.take_while { |n| n < 5 }
-      
+
       expect(result).to eq(expected)
       expect(result).to eq([1, 2, 3, 4])
     end

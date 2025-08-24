@@ -20,7 +20,7 @@ module AsyncEnumerable
     #
     # @see #any?
     def none?(pattern = nil, &block)
-      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues  
+      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
       if pattern
         return @enumerable.none?(pattern)
       elsif !block_given?
