@@ -7,9 +7,11 @@ module Async
       # Processes only the first n elements in parallel, avoiding unnecessary
       # work on remaining elements. Results are returned in order despite
       # parallel execution.
+      #
       # @param n [Integer] Number of elements to take
       # @return [Array] Array containing the first n elements (or fewer if
       #   the enumerable has less than n elements)
+      #
       # @example Take first 10 elements
       #   (1..100).async.take(10)  # => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       #

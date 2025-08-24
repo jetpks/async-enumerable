@@ -8,9 +8,9 @@ module Async
     # implementations of Enumerable methods for parallel execution.
     #
     # This class wraps any Enumerable object and provides async versions of
-    # standard enumerable methods. It includes the standard Enumerable module for
-    # compatibility, as well as specialized async implementations through the
-    # EarlyTerminable module.
+    # standard enumerable methods. It includes the standard Enumerable module
+    # for compatibility, as well as specialized async implementations through
+    # the EarlyTerminable module.
     #
     # The AsyncEnumerator maintains a reference to the original enumerable and
     # delegates method calls while providing concurrent execution capabilities
@@ -29,19 +29,14 @@ module Async
     #
     # @see EarlyTerminable
     class AsyncEnumerator
-      # Includes standard Enumerable for compatibility and method delegation
       include ::Enumerable
-
-      # Includes bounded concurrency helper for fiber limit management
       include BoundedConcurrency
-
-      # Includes optimized async implementations of early-terminable methods
-      # (all?, any?, none?, one?, include?, find, find_index, first, take, take_while)
       include EarlyTerminable
 
-      # Creates a new AsyncEnumerator wrapping the given enumerable.
+      # Creates a new Async::Enumerator wrapping the given enumerable.
       #
       # @param enumerable [Enumerable] Any object that includes Enumerable
+      #
       # @param max_fibers [Integer, nil] Maximum number of concurrent fibers,
       #   defaults to Async::Enumerable.max_fibers
       #
@@ -59,8 +54,7 @@ module Async
       #
       # This method simply converts the wrapped enumerable to an array without
       # any async processing. Note that async operations like map and select
-      # already return arrays, so this is primarily useful for converting the
-      # initial wrapped enumerable to an array.
+      # already return arrays.
       #
       # @return [Array] The wrapped enumerable converted to an array
       #
@@ -78,12 +72,13 @@ module Async
       # Asynchronously iterates over each element in the enumerable, executing
       # the given block in parallel for each item.
       #
-      # This method spawns async tasks for each item in the enumerable, allowing
-      # them to execute concurrently. It uses an Async::Barrier to coordinate the
-      # tasks and waits for all of them to complete before returning.
+      # This method spawns async tasks for each item in the enumerable,
+      # allowing them to execute concurrently. It uses an Async::Barrier to
+      # coordinate the tasks and waits for all of them to complete before
+      # returning.
       #
-      # When called without a block, returns an Enumerator for compatibility with
-      # the standard Enumerable interface.
+      # When called without a block, returns an Enumerator for compatibility
+      # with the standard Enumerable interface.
       #
       # @yield [item] Gives each element to the block in parallel
       # @yieldparam item The current item from the enumerable

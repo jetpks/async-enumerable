@@ -4,12 +4,15 @@ module Async
   module Enumerable
     module EarlyTerminable
       # Asynchronously checks if any element satisfies the given condition.
-      # Executes the block for each element in parallel and returns true as soon
-      # as any element returns a truthy value. Short-circuits and stops
+      #
+      # Executes the block for each element in parallel and returns true as
+      # soon as any element returns a truthy value. Short-circuits and stops
       # processing remaining elements once a match is found.
+      #
       # @yield [item] Block to test each element
       # @yieldparam item Each element from the enumerable
       # @yieldreturn [Boolean] Whether the element satisfies the condition
+      #
       # @return [Boolean] true if any element satisfies the condition, false
       #   otherwise
       # @example Check if any number is negative

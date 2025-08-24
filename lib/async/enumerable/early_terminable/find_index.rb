@@ -4,16 +4,20 @@ module Async
   module Enumerable
     module EarlyTerminable
       # Asynchronously finds the index of an element that matches.
+      #
       # Can be called with either a value to search for or a block to test
-      # elements. Executes in parallel and returns the index of a matching element.
-      # Short-circuits once a match is found.
+      # elements. Executes in parallel and returns the index of a matching
+      # element. Short-circuits once a match is found.
+      #
       # Note: Due to parallel execution, this may not return the lowest index
-      # when multiple elements match. It returns the index of whichever matching
-      # element completes first. For guaranteed lowest index, use the synchronous
-      # version on the wrapped enumerable.
+      # when multiple elements match. It returns the index of whichever
+      # matching element completes first. For guaranteed lowest index, use the
+      # synchronous version on the wrapped enumerable.
+      #
       # @overload find_index(value)
       #   @param value The value to search for
       #   @return [Integer, nil] Index of the first occurrence of value
+      #
       # @overload find_index(&block)
       #   @yield [item] Block to test each element
       #   @yieldparam item Each element from the enumerable

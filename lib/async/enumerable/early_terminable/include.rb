@@ -4,9 +4,12 @@ module Async
   module Enumerable
     module EarlyTerminable
       # Asynchronously checks if the enumerable includes the given object.
+      #
       # Searches for the object in parallel across all elements. Short-circuits
       # and returns true as soon as a matching element is found.
+      #
       # @param obj The object to search for
+      #
       # @return [Boolean] true if the object is found, false otherwise
       #
       # @example Check for inclusion

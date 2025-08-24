@@ -21,8 +21,10 @@ module Async
       #
       # @param early_termination [Boolean] Whether the operation supports
       #   early termination (expects Async::Stop exceptions)
+      #
       # @yield [barrier] Gives the barrier to use for spawning async tasks
       # @yieldparam barrier [Async::Barrier] The barrier for spawning tasks
+      #
       # @return The result of the block
       def with_bounded_concurrency(early_termination: false, &block)
         Sync do |parent|

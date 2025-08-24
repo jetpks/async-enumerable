@@ -3,15 +3,14 @@
 require "async"
 require "async/barrier"
 require "async/semaphore"
-require "concurrent"
 require "concurrent/array"
 require "concurrent/atomic/atomic_boolean"
 require "concurrent/atomic/atomic_fixnum"
 require "concurrent/atomic/atomic_reference"
 
 module Async
-  # Async::Enumerable provides asynchronous, parallel execution capabilities for
-  # Ruby's Enumerable.
+  # Async::Enumerable provides asynchronous, parallel execution capabilities
+  # for Ruby's Enumerable.
   #
   # This gem extends Ruby's Enumerable module with an `.async` method that
   # returns an AsyncEnumerator wrapper, enabling concurrent execution of
