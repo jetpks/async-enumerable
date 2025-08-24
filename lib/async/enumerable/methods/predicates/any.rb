@@ -27,15 +27,15 @@ module Async
           def any?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
-              return @enumerable.any?(pattern)
+              return enumerable_source.any?(pattern)
             elsif !block_given?
-              return @enumerable.any?
+              return enumerable_source.any?
             end
 
             found = Concurrent::AtomicBoolean.new(false)
 
             with_bounded_concurrency(early_termination: true) do |barrier|
-              @enumerable.each do |item|
+              enumerable_source.each do |item|
                 break if found.true?
 
                 barrier.async do

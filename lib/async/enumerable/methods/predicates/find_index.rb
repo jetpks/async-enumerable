@@ -41,7 +41,7 @@ module Async
             result_index = Concurrent::AtomicReference.new(nil)
 
             with_bounded_concurrency(early_termination: true) do |barrier|
-              @enumerable.each_with_index do |item, index|
+              enumerable_source.each_with_index do |item, index|
                 break unless result_index.get.nil?
 
                 barrier.async do

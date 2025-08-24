@@ -30,13 +30,11 @@ module Async
   #
   # @see Enumerable::Methods
   class Enumerator
-    extend Forwardable
-    include ::Enumerable
-    include Comparable
-    include Enumerable::Methods      # All async method implementations
-    include Enumerable::FiberLimiter # Fiber limiting functionality
+    include Async::Enumerable
+    def_enumerator :@enumerable
 
     # Delegate methods that are inherently sequential back to the wrapped enumerable
+    extend Forwardable
     def_delegators :@enumerable, :first, :take, :take_while, :lazy, :size, :length
 
     # Creates a new Async::Enumerator wrapping the given enumerable.

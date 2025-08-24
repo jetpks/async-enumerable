@@ -9,11 +9,14 @@ require "concurrent/atomic/atomic_boolean"
 require "concurrent/atomic/atomic_fixnum"
 require "concurrent/atomic/atomic_reference"
 
+module Async
+  module Enumerable
+  end
+end
+
 require "async/enumerable/fiber_limiter"
 require "async/enumerable/methods"
 require "async/enumerable/version"
-require "async/enumerator"
-require "enumerable/async"
 
 module Async
   # Async::Enumerable provides asynchronous, parallel execution capabilities
@@ -81,9 +84,40 @@ module Async
     end
 
     def self.included(base)
+      base.include(::Enumerable)
+      base.include(::Comparable)
       base.extend(ClassMethods)
       base.include(Methods)      # Include all method groups
       base.include(FiberLimiter) # Include fiber limiting functionality
+      base.include(AsyncMethod)  # Include async method last to override Enumerable's
+    end
+
+    # Module containing the async method that needs to override Enumerable's version
+    module AsyncMethod
+      # Default async method when no def_enumerator is called
+      # This allows including classes to call async on self
+      # If already async (is an Async::Enumerator), returns self for idempotent chaining
+      def async(max_fibers: nil)
+        # If we're already an Async::Enumerator, just return self
+        # This makes .async.async.async idempotent
+        return self if is_a?(::Async::Enumerator)
+
+        if self.class.respond_to?(:enumerable_source) && self.class.enumerable_source
+          source_method = self.class.enumerable_source
+          # Handle instance variables (e.g., :@enumerable)
+          source = if source_method.is_a?(Symbol) && source_method.to_s.start_with?("@")
+            instance_variable_get(source_method)
+          else
+            send(source_method)
+          end
+          fiber_limit = max_fibers || self.class.default_max_fibers
+        else
+          # If no source is defined, assume self is enumerable
+          source = self
+          fiber_limit = max_fibers
+        end
+        ::Async::Enumerator.new(source, max_fibers: fiber_limit)
+      end
     end
 
     module ClassMethods
@@ -110,29 +144,12 @@ module Async
       def def_enumerator(method_name, max_fibers: nil)
         @enumerable_source = method_name
         @default_max_fibers = max_fibers
-
-        define_method :async do |**options|
-          source = send(method_name)
-          fiber_limit = options[:max_fibers] || self.class.default_max_fibers
-          ::Async::Enumerator.new(source, max_fibers: fiber_limit)
-        end
       end
 
       attr_reader :enumerable_source, :default_max_fibers
     end
-
-    # Default async method when no def_enumerator is called
-    # This allows including classes to call async on self
-    def async(max_fibers: nil)
-      if self.class.respond_to?(:enumerable_source) && self.class.enumerable_source
-        source = send(self.class.enumerable_source)
-        fiber_limit = max_fibers || self.class.default_max_fibers
-      else
-        # If no source is defined, assume self is enumerable
-        source = self
-        fiber_limit = max_fibers
-      end
-      ::Async::Enumerator.new(source, max_fibers: fiber_limit)
-    end
   end
 end
+
+require "async/enumerator"
+require "enumerable/async"

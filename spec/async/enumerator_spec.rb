@@ -9,6 +9,21 @@ RSpec.describe Async::Enumerator do
       result = [1, 2, 3].async
       expect(result).to be_a(Async::Enumerator)
     end
+
+    it "is idempotent - calling async multiple times returns the same instance" do
+      first = [1, 2, 3].async
+      second = first.async
+      third = second.async
+
+      expect(second).to be(first)  # Same object identity
+      expect(third).to be(first)   # Same object identity
+      expect(third).to be(second)  # Same object identity
+    end
+
+    it "allows chaining async calls without creating new instances" do
+      result = [1, 2, 3].async.async.async.map { |x| x * 2 }
+      expect(result.to_a).to eq([2, 4, 6])
+    end
   end
 
   describe "#each" do

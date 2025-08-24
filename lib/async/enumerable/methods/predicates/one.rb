@@ -27,15 +27,15 @@ module Async
           def one?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
-              return @enumerable.one?(pattern)
+              return enumerable_source.one?(pattern)
             elsif !block_given?
-              return @enumerable.one?
+              return enumerable_source.one?
             end
 
             count = Concurrent::AtomicFixnum.new(0)
 
             with_bounded_concurrency(early_termination: true) do |barrier|
-              @enumerable.each do |item|
+              enumerable_source.each do |item|
                 break if count.value > 1
 
                 barrier.async do

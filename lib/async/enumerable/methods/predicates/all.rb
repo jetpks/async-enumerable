@@ -28,15 +28,15 @@ module Async
           def all?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
-              return @enumerable.all?(pattern)
+              return enumerable_source.all?(pattern)
             elsif !block_given?
-              return @enumerable.all?
+              return enumerable_source.all?
             end
 
             failed = Concurrent::AtomicBoolean.new(false)
 
             with_bounded_concurrency(early_termination: true) do |barrier|
-              @enumerable.each do |item|
+              enumerable_source.each do |item|
                 break if failed.true?
 
                 barrier.async do
