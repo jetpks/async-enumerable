@@ -24,7 +24,7 @@ module Async
       @enumerable = enumerable
 
       # Handle the common case of Enumerator.new(enumerable, max_fibers: n)
-      if config.is_a?(Hash) && !config.is_a?(Config)
+      if config.is_a?(Hash)
         kwargs = config
         config = nil
       end

@@ -64,14 +64,13 @@ module Async
       base.include(Methods)      # Include all method groups
       base.include(FiberLimiter) # Include fiber limiting functionality
       base.include(AsyncMethod)  # Include async method last to override Enumerable's
-      base.include(ConfigAccessor) # Include config accessor method
     end
 
-    # Module providing config accessor method
-    module ConfigAccessor
-      def __async_enumerable_config
-        @async_enumerable_config || Async::Enumerable.config
-      end
+    # Instance method to get config with proper precedence
+    def __async_enumerable_config
+      @async_enumerable_config ||
+        self.class.__async_enumerable_config ||
+        Async::Enumerable.config
     end
 
     # Async method module - included last to override Enumerable's version.
@@ -92,9 +91,16 @@ module Async
           else
             send(source_method)
           end
-          ::Async::Enumerator.new(source, **kwargs)
-        else
+          # Pass the class config if no kwargs provided
+          if kwargs.empty? && self.class.respond_to?(:__async_enumerable_config)
+            ::Async::Enumerator.new(source, self.class.__async_enumerable_config)
+          else
+            ::Async::Enumerator.new(source, **kwargs)
+          end
+        elsif kwargs.empty? && self.class.respond_to?(:__async_enumerable_config)
           # If no source is defined, assume self is enumerable
+          ::Async::Enumerator.new(self, self.class.__async_enumerable_config)
+        else
           ::Async::Enumerator.new(self, **kwargs)
         end
       end
@@ -103,11 +109,16 @@ module Async
     module ClassMethods
       # Defines enumerable source for async operations.
       # @param method_name [Symbol] Method/ivar returning enumerable
-      # @param max_fibers [Integer, nil] Default concurrency limit (kept for compatibility)
-      def def_enumerator(method_name, max_fibers: nil)
+      # @param kwargs [Hash] Configuration options (max_fibers, etc.)
+      def def_enumerator(method_name, **kwargs)
         @enumerable_source = method_name
-        # max_fibers parameter kept for backward compatibility but not used
-        # Users should pass max_fibers to .async() method instead
+        # Create class-level config if any options provided
+        @class_config = Config.new(**kwargs) unless kwargs.empty?
+      end
+
+      # Class method to get config with proper precedence
+      def __async_enumerable_config
+        @class_config || Async::Enumerable.config
       end
 
       attr_reader :enumerable_source
