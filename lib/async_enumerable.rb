@@ -4,18 +4,21 @@ require "async"
 require "async/barrier"
 require "concurrent"
 
-# AsyncEnumerable provides asynchronous, parallel execution capabilities for Ruby's Enumerable.
+# AsyncEnumerable provides asynchronous, parallel execution capabilities for
+# Ruby's Enumerable.
 #
-# This gem extends Ruby's Enumerable module with an `.async` method that returns an
-# AsyncEnumerator wrapper, enabling concurrent execution of enumerable operations using
-# the socketry/async library. This allows for significant performance improvements when
-# dealing with I/O-bound operations or processing large collections.
+# This gem extends Ruby's Enumerable module with an `.async` method that
+# returns an AsyncEnumerator wrapper, enabling concurrent execution of
+# enumerable operations using the socketry/async library. This allows for
+# significant performance improvements when dealing with I/O-bound operations
+# or processing large collections.
 #
 # ## Features
 #
 # - Parallel execution of enumerable methods
 # - Thread-safe operation with atomic variables
-# - Optimized early-termination implementations for predicates and find operations
+# - Optimized early-termination implementations for predicates and find
+#   operations
 # - Full compatibility with standard Enumerable interface
 #
 # ## Usage
@@ -45,8 +48,6 @@ require "concurrent"
 module AsyncEnumerable; end
 
 require "async_enumerable/version"
-require "async_enumerable/errors"
-require "async_enumerable/each"
 require "async_enumerable/early_terminable"
 require "async_enumerable/async"
 

@@ -3,11 +3,11 @@
 # Extension to Ruby's Enumerable module that adds asynchronous capabilities.
 module Enumerable
   # Returns an AsyncEnumerator wrapper that provides asynchronous versions of
-  # enumerable methods for parallel execution.
+  # Enumerable methods for parallel execution.
   #
-  # This method enables concurrent processing of enumerable operations using
-  # the socketry/async library, allowing for significant performance improvements
-  # when dealing with I/O-bound operations or large collections.
+  # This method enables concurrent processing of Enumerable operations using
+  # the `socketry/async` library, allowing for significant performance
+  # improvements when dealing with I/O-bound operations or large collections.
   #
   # @example Basic usage with async map
   #   [1, 2, 3].async.map { |n| n * 2 }  # => [2, 4, 6] (executed in parallel)
@@ -21,8 +21,9 @@ module Enumerable
   #       .map { |item| process(item) }
   #       .to_a
   #
-  # @return [AsyncEnumerable::AsyncEnumerator] An async wrapper around this enumerable
-  #   that provides parallel execution capabilities for enumerable methods
+  # @return [AsyncEnumerable::AsyncEnumerator] An async wrapper around this
+  #   enumerable that provides parallel execution capabilities for enumerable
+  #   methods
   #
   # @see AsyncEnumerable::AsyncEnumerator
   def async

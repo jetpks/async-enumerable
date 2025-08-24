@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "AsyncEnumerable::Each" do
+RSpec.describe "AsyncEnumerable::AsyncEnumerator#each" do
   describe "#each" do
     it "executes block for each element" do
       results = []
