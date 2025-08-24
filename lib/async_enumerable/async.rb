@@ -44,21 +44,20 @@ module AsyncEnumerable
 
     # Returns the wrapped enumerable as an array.
     #
-    # This method provides direct access to the underlying enumerable's array
-    # representation without any async processing. It's useful when you need to
-    # materialize the collection after async operations.
+    # This method simply converts the wrapped enumerable to an array without
+    # any async processing. Note that async operations like map and select
+    # already return arrays, so this is primarily useful for converting the
+    # initial wrapped enumerable to an array.
     #
-    # @return [Array] The enumerable converted to an array
+    # @return [Array] The wrapped enumerable converted to an array
     #
     # @example
-    #   async_enum = [1, 2, 3].async
+    #   async_enum = (1..3).async
     #   async_enum.to_a  # => [1, 2, 3]
     #
-    # @example After async operations
-    #   result = data.async
-    #                .select { |x| x.even? }
-    #                .map { |x| x * 2 }
-    #                .to_a  # Materializes the final result
+    # @example Converting a Set
+    #   async_set = Set[1, 2, 3].async
+    #   async_set.to_a  # => [1, 2, 3] (order may vary)
     def to_a
       @enumerable.to_a
     end
@@ -67,11 +66,11 @@ module AsyncEnumerable
     # the given block in parallel for each item.
     #
     # This method spawns async tasks for each item in the enumerable, allowing
-    # them to execute concurrently. It uses an Async::Barrier to coordinate
-    # the tasks and waits for all of them to complete before returning.
+    # them to execute concurrently. It uses an Async::Barrier to coordinate the
+    # tasks and waits for all of them to complete before returning.
     #
-    # When called without a block, returns an Enumerator for compatibility
-    # with the standard Enumerable interface.
+    # When called without a block, returns an Enumerator for compatibility with
+    # the standard Enumerable interface.
     #
     # @yield [item] Gives each element to the block in parallel
     # @yieldparam item The current item from the enumerable
