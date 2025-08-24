@@ -22,7 +22,13 @@ module Async
         #   async_set = Set[1, 2, 3].async
         #   async_set.to_a  # => [1, 2, 3] (order may vary)
         def to_a
-          @enumerable.to_a
+          source = enumerable_source
+          # If source is self, we need to use super to avoid infinite recursion
+          if source == self
+            super
+          else
+            source.to_a
+          end
         end
 
         # Synchronizes the async enumerable back to a regular array.

@@ -24,9 +24,9 @@ module Async
           def none?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
-              return @enumerable.none?(pattern)
+              return enumerable_source.none?(pattern)
             elsif !block_given?
-              return @enumerable.none?
+              return enumerable_source.none?
             end
             # For blocks, use our async any? and negate
             !any?(&block)
