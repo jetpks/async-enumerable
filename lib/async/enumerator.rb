@@ -177,14 +177,14 @@ module Async
     # Async version of map that returns an Async::Enumerator for chaining
     def map(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
     alias_method :collect, :map
 
     # Async version of select that returns an Async::Enumerator for chaining
     def select(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
     alias_method :filter, :select
     alias_method :find_all, :select
@@ -192,41 +192,41 @@ module Async
     # Async version of reject that returns an Async::Enumerator for chaining
     def reject(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
 
     # Async version of filter_map that returns an Async::Enumerator for chaining
     def filter_map(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
 
     # Async version of flat_map that returns an Async::Enumerator for chaining
     def flat_map(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
     alias_method :collect_concat, :flat_map
 
     # Async version of compact that returns an Async::Enumerator for chaining
     def compact
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
 
     # Async version of uniq that returns an Async::Enumerator for chaining
     def uniq(&block)
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
 
     # Async version of sort that returns an Async::Enumerator for chaining
     def sort(&block)
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
 
     # Async version of sort_by that returns an Async::Enumerator for chaining
     def sort_by(&block)
       return enum_for(__method__) unless block_given?
-      new(super, max_fibers: @max_fibers)
+      self.class.new(super, max_fibers: @max_fibers)
     end
   end
 end
