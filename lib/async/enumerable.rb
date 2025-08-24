@@ -112,7 +112,7 @@ module Async
 
         define_method :async do |**options|
           source = send(method_name)
-          fiber_limit = options[:max_fibers] || @default_max_fibers
+          fiber_limit = options[:max_fibers] || self.class.default_max_fibers
           ::Async::Enumerator.new(source, max_fibers: fiber_limit)
         end
       end

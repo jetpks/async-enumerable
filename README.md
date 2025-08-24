@@ -38,6 +38,45 @@ data.async
   .take(10)
 ```
 
+### Including in Your Classes
+
+Async::Enumerable can be included in your own classes to add async capabilities:
+
+```ruby
+class TodoList
+  include Async::Enumerable
+  def_enumerator :todos  # Specify which method returns the enumerable
+  
+  def initialize
+    @todos = []
+  end
+  
+  def add(todo)
+    @todos << todo
+    self
+  end
+  
+  attr_reader :todos
+end
+
+list = TodoList.new
+list.add("Buy milk").add("Write code").add("Review PR")
+
+# Process todos asynchronously
+completed = list.async.map { |todo| process_todo(todo) }.sync
+```
+
+You can also specify a default fiber limit for your class:
+
+```ruby
+class ApiClient
+  include Async::Enumerable
+  def_enumerator :endpoints, max_fibers: 10  # Limit concurrent requests
+  
+  attr_reader :endpoints
+end
+```
+
 ### Parallel Execution
 
 The main benefit of Async::Enumerable is parallel execution of block operations:
@@ -130,6 +169,31 @@ async_result == [2, 4, 6]  # => true
 
 # This makes testing clean and simple
 expect(data.async.select { |x| x.valid? }).to eq(expected_valid_items)
+```
+
+### Module Structure
+
+Async::Enumerable is organized into logical modules for better maintainability and selective inclusion:
+
+- **`Async::Enumerable::Methods::Transformers`** - Methods that transform collections (map, select, reject, etc.)
+- **`Async::Enumerable::Methods::Predicates`** - Methods that test conditions with early termination (all?, any?, none?, one?, include?, find, find_index)
+- **`Async::Enumerable::Methods::Converters`** - Methods that convert to other types (to_a, sync)
+- **`Async::Enumerable::Methods::Aggregators`** - Aggregation methods inherited from Enumerable (reduce, sum, count, etc.)
+- **`Async::Enumerable::Methods::Iterators`** - Iteration helpers inherited from Enumerable (each_with_index, each_cons, etc.)
+- **`Async::Enumerable::Methods::Slicers`** - Slicing/filtering methods inherited from Enumerable (drop, grep, partition, etc.)
+- **`Async::Enumerable::FiberLimiter`** - Cross-cutting concern for limiting concurrent fibers
+
+You can selectively include specific modules if needed:
+
+```ruby
+class CustomAsync
+  include Enumerable
+  include Async::Enumerable::Methods::Transformers::Map
+  include Async::Enumerable::Methods::Converters::Sync
+  include Async::Enumerable::FiberLimiter
+  
+  # Only has async map and sync methods
+end
 ```
 
 ### When to Use Async
