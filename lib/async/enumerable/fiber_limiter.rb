@@ -2,15 +2,15 @@
 
 module Async
   module Enumerable
-    # BoundedConcurrency provides a helper method for executing async
+    # FiberLimiter provides a helper method for executing async
     # operations with a maximum fiber limit to prevent unbounded concurrency.
     #
-    # This module is included in AsyncEnumerator to provide a consistent way to
-    # limit the number of concurrent fibers created during async operations. It
-    # uses Async::Semaphore to enforce the fiber limit.
+    # This module is included in Async::Enumerator and Async::Enumerable to
+    # provide a consistent way to limit the number of concurrent fibers created
+    # during async operations. It uses Async::Semaphore to enforce the fiber limit.
     #
     # @api private
-    module BoundedConcurrency
+    module FiberLimiter
       private
 
       # Executes a block with bounded concurrency using a semaphore.
