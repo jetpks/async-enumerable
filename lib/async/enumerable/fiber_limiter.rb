@@ -35,7 +35,7 @@ module Async
       # Gets max fibers (instance or global default).
       # @return [Integer] Maximum concurrent fibers
       def max_fibers
-        @async_enumerable_config&.max_fibers || Async::Enumerable.max_fibers
+        __async_enumerable_config&.max_fibers || Async::Enumerable.max_fibers
       end
     end
   end

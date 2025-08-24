@@ -7,7 +7,7 @@ module Async
         module Compact
           # Async version of compact that returns an Async::Enumerator for chaining
           def compact
-            self.class.new(super, @async_enumerable_config)
+            self.class.new(super, __async_enumerable_config)
           end
         end
       end

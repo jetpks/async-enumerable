@@ -8,7 +8,7 @@ module Async
           # Async version of sort_by that returns an Async::Enumerator for chaining
           def sort_by(&block)
             return enum_for(__method__) unless block_given?
-            self.class.new(super, @async_enumerable_config)
+            self.class.new(super, __async_enumerable_config)
           end
         end
       end

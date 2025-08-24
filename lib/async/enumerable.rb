@@ -23,15 +23,13 @@ module Async
   # Provides async parallel execution for Enumerable.
   # See docs/reference/enumerable.md for detailed documentation.
   module Enumerable
-    DEFAULT_MAX_FIBERS = 1024
-
     class << self
       attr_accessor :config
 
       # Gets default max fibers (defaults to 1024).
       # @return [Integer] Maximum fiber limit
       def max_fibers
-        config&.max_fibers || DEFAULT_MAX_FIBERS
+        (self.config ||= Config.default).max_fibers
       end
 
       # Sets default max fibers.
@@ -48,14 +46,15 @@ module Async
       base.include(Methods)      # Include all method groups
       base.include(FiberLimiter) # Include fiber limiting functionality
       base.include(AsyncMethod)  # Include async method last to override Enumerable's
+      base.include(ConfigAccessor) # Include config accessor method
+    end
 
-      # Initialize config instance variable for Async::Enumerator
-      # (not for other classes that include this module)
-      if base == ::Async::Enumerator
-        base.class_eval do
-          # This will be set in initialize, but we define it here for clarity
-          @async_enumerable_config = nil
-        end
+    # Module providing private config accessor method
+    module ConfigAccessor
+      private
+
+      def __async_enumerable_config
+        @async_enumerable_config
       end
     end
 

@@ -7,7 +7,7 @@ module Async
         module Uniq
           # Async version of uniq that returns an Async::Enumerator for chaining
           def uniq(&block)
-            self.class.new(super, @async_enumerable_config)
+            self.class.new(super, __async_enumerable_config)
           end
         end
       end

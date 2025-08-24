@@ -23,25 +23,20 @@ module Async
     def initialize(enumerable = [], config = nil, **kwargs)
       @enumerable = enumerable
 
-      # Handle backward compatibility - if config looks like old max_fibers keyword arg
       if config.is_a?(Hash) && config.key?(:max_fibers) && kwargs.empty?
         kwargs = config
         config = nil
       end
 
       # Config resolution with correct precedence (kwargs > passed config > module config)
-      # Start with module config as base
       base_config = Async::Enumerable.config || Config.default
 
-      # Merge with passed config if provided
       merged_config = if config.is_a?(Config)
-        # Merge the passed config values into base config
         base_config.with(**config.to_h)
       else
         base_config
       end
 
-      # Apply kwargs last (highest precedence)
       @async_enumerable_config = kwargs.empty? ? merged_config : merged_config.with(**kwargs)
     end
 
