@@ -8,6 +8,11 @@ require "concurrent/atomic/atomic_boolean"
 require "concurrent/atomic/atomic_fixnum"
 require "concurrent/atomic/atomic_reference"
 
+require "async/enumerable/version"
+require "async/enumerable/early_terminable"
+require "async/enumerator"
+require "enumerable/async"
+
 module Async
   # Async::Enumerable provides asynchronous, parallel execution capabilities
   # for Ruby's Enumerable.
@@ -59,12 +64,9 @@ module Async
   # @see Enumerable#async
   # @see Async::Enumerator
   module Enumerable
+    DEFAULT_MAX_FIBERS = 1024
+
     class << self
-      # Sets the default maximum number of fibers for async operations.
-      # This limits the number of fibers that can be created concurrently.
-      #
-      # @param limit [Integer] Maximum number of concurrent fibers
-      # @return [Integer] The new limit
       attr_writer :max_fibers
 
       # Gets the default maximum number of fibers for async operations.
@@ -72,14 +74,8 @@ module Async
       #
       # @return [Integer] The current maximum fiber limit
       def max_fibers
-        @max_fibers ||= 1024
+        @max_fibers ||= DEFAULT_MAX_FIBERS
       end
     end
   end
 end
-
-require "async/enumerable/version"
-require "async/enumerable/early_terminable"
-require "async/enumerator"
-
-require "enumerable/async"

@@ -90,102 +90,6 @@ module Async
     #   data.async.select { |x| x.valid? }.sync  # same as .to_a
     alias_method :sync, :to_a
 
-    # Compares this Async::Enumerator with another object.
-    # Converts both to arrays for comparison.
-    #
-    # @param other [Object] The object to compare with
-    # @return [Integer, nil] -1, 0, 1, or nil based on comparison
-    #
-    # @example Comparing with an array
-    #   async_enum = [1, 2, 3].async
-    #   async_enum <=> [1, 2, 3]  # => 0
-    #   async_enum <=> [1, 2, 4]  # => -1
-    def <=>(other)
-      return nil unless other.respond_to?(:to_a)
-      to_a <=> other.to_a
-    end
-
-    # Checks equality with another object.
-    # Converts both to arrays for comparison.
-    #
-    # @param other [Object] The object to compare with
-    # @return [Boolean] true if equal, false otherwise
-    #
-    # @example Testing equality with an array
-    #   result = [1, 2, 3].async.map { |x| x * 2 }
-    #   result == [2, 4, 6]  # => true
-    def ==(other)
-      return false unless other.respond_to?(:to_a)
-      to_a == other.to_a
-    end
-    alias_method :eql?, :==
-
-    # Override transformation methods to return Async::Enumerator for chaining
-
-    # Async version of map that returns an Async::Enumerator for chaining
-    def map(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-    alias_method :collect, :map
-
-    # Async version of select that returns an Async::Enumerator for chaining
-    def select(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-    alias_method :filter, :select
-    alias_method :find_all, :select
-
-    # Async version of reject that returns an Async::Enumerator for chaining
-    def reject(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
-    # Async version of filter_map that returns an Async::Enumerator for chaining
-    def filter_map(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
-    # Async version of flat_map that returns an Async::Enumerator for chaining
-    def flat_map(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-    alias_method :collect_concat, :flat_map
-
-    # Async version of compact that returns an Async::Enumerator for chaining
-    def compact
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
-    # Async version of uniq that returns an Async::Enumerator for chaining
-    def uniq(&block)
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
-    # Async version of sort that returns an Async::Enumerator for chaining
-    def sort(&block)
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
-    # Async version of sort_by that returns an Async::Enumerator for chaining
-    def sort_by(&block)
-      return enum_for(__method__) unless block_given?
-      result = super
-      Async::Enumerator.new(result, max_fibers: @max_fibers)
-    end
-
     # Asynchronously iterates over each element in the enumerable, executing
     # the given block in parallel for each item.
     #
@@ -236,6 +140,93 @@ module Async
 
       # Return self to allow chaining, like standard each
       self
+    end
+
+    # Compares this Async::Enumerator with another object.
+    # Converts both to arrays for comparison.
+    #
+    # @param other [Object] The object to compare with
+    # @return [Integer, nil] -1, 0, 1, or nil based on comparison
+    #
+    # @example Comparing with an array
+    #   async_enum = [1, 2, 3].async
+    #   async_enum <=> [1, 2, 3]  # => 0
+    #   async_enum <=> [1, 2, 4]  # => -1
+    def <=>(other)
+      return nil unless other.respond_to?(:to_a)
+      to_a <=> other.to_a
+    end
+
+    # Checks equality with another object.
+    # Converts both to arrays for comparison.
+    #
+    # @param other [Object] The object to compare with
+    # @return [Boolean] true if equal, false otherwise
+    #
+    # @example Testing equality with an array
+    #   result = [1, 2, 3].async.map { |x| x * 2 }
+    #   result == [2, 4, 6]  # => true
+    def ==(other)
+      return false unless other.respond_to?(:to_a)
+      to_a == other.to_a
+    end
+    alias_method :eql?, :==
+
+    # Override transformation methods to return Async::Enumerator for chaining
+
+    # Async version of map that returns an Async::Enumerator for chaining
+    def map(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
+    end
+    alias_method :collect, :map
+
+    # Async version of select that returns an Async::Enumerator for chaining
+    def select(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
+    end
+    alias_method :filter, :select
+    alias_method :find_all, :select
+
+    # Async version of reject that returns an Async::Enumerator for chaining
+    def reject(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
+    end
+
+    # Async version of filter_map that returns an Async::Enumerator for chaining
+    def filter_map(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
+    end
+
+    # Async version of flat_map that returns an Async::Enumerator for chaining
+    def flat_map(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
+    end
+    alias_method :collect_concat, :flat_map
+
+    # Async version of compact that returns an Async::Enumerator for chaining
+    def compact
+      new(super, max_fibers: @max_fibers)
+    end
+
+    # Async version of uniq that returns an Async::Enumerator for chaining
+    def uniq(&block)
+      new(super, max_fibers: @max_fibers)
+    end
+
+    # Async version of sort that returns an Async::Enumerator for chaining
+    def sort(&block)
+      new(super, max_fibers: @max_fibers)
+    end
+
+    # Async version of sort_by that returns an Async::Enumerator for chaining
+    def sort_by(&block)
+      return enum_for(__method__) unless block_given?
+      new(super, max_fibers: @max_fibers)
     end
   end
 end
