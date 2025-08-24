@@ -63,15 +63,15 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#find_index" do
       checked = Concurrent::Array.new
       completed = Concurrent::Array.new
       started = Concurrent::AtomicFixnum.new(0)
-      
+
       # Use a larger dataset with limited concurrency to make early termination observable
       result = (1..20).to_a.async(max_fibers: 2).find_index do |n|
         started.increment
         checked << n
-        
+
         # Add a small delay to allow more tasks to start before the first one completes
         sleep(0.005)
-        
+
         # Check condition - will match at index 5 and above (values 6+)
         matches = n > 5
         completed << n
@@ -81,14 +81,14 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#find_index" do
       # With parallel execution, we'll get a matching index but not necessarily the first
       expect(result).to be >= 5  # Will be index of some element > 5
       expect(result).to be <= 19  # But within valid range
-      
+
       # The key validations for early termination:
       # 1. Not all tasks should complete (early termination happened)
       expect(completed.size).to be < 20
-      
+
       # 2. The value at the returned index should match our condition
       expect((1..20).to_a[result]).to be > 5
-      
+
       # 3. We should see evidence of early termination - some tasks didn't complete
       # Allow for race conditions - just verify early termination occurred
       expect(started.value).to be <= 20

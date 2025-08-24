@@ -53,15 +53,15 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#one?" do
       completed = Concurrent::Array.new
       started = Concurrent::AtomicFixnum.new(0)
       matched = Concurrent::AtomicFixnum.new(0)
-      
+
       # Use a larger dataset with limited concurrency to make early termination observable
       result = (1..20).to_a.async(max_fibers: 2).one? do |n|
         started.increment
         checked << n
-        
+
         # Add a small delay to allow more tasks to start before the first one completes
         sleep(0.005)
-        
+
         # Check condition - will match multiple times (6, 7, 8, etc.)
         matches = n > 5
         if matches
@@ -74,14 +74,14 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#one?" do
       end
 
       expect(result).to be false  # one? returns false when multiple elements match
-      
+
       # The key validations for early termination:
       # 1. Not all tasks should complete (early termination happened)
       expect(completed.size).to be < 20
-      
+
       # 2. At least two matching tasks should have been found
       expect(matched.value).to be >= 2
-      
+
       # 3. We should see evidence of early termination - some tasks didn't complete
       # Allow for race conditions - just verify early termination occurred
       expect(started.value).to be <= 20

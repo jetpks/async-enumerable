@@ -72,17 +72,17 @@ RSpec.describe "Async::Enumerable::EarlyTerminable#include?" do
       result = objects.async(max_fibers: 2).include?(:target)
 
       expect(result).to be true
-      
+
       # The key validations for early termination:
       # 1. The matching element should have been checked
       expect(checked).to include(8)
-      
+
       # 2. We should see evidence of early termination
       # With a larger dataset and delay, we should see that not all were checked
       # Allow for race conditions - the key is that we found the element
       expect(started.value).to be >= 1  # At least the matching element was checked
       expect(started.value).to be <= 50  # But possibly not all
-      
+
       # Note: include? delegates to any?, which may start all tasks before one completes,
       # so we can't guarantee checked.size < 50. The important thing is that it finds
       # the element and returns true.
