@@ -5,25 +5,9 @@ module Async
     module Methods
       module Predicates
         module One
-          # Asynchronously checks if exactly one element satisfies the given
-          # condition.
-          #
-          # Executes the block for each element in parallel and returns true if
-          # exactly one element returns a truthy value. Short-circuits and returns
-          # false as soon as a second match is found.
-          #
-          # @yield [item] Block to test each element
-          # @yieldparam item Each element from the enumerable
-          # @yieldreturn [Boolean] Whether the element satisfies the condition
-          #
-          # @return [Boolean] true if exactly one element satisfies the condition
-          #
-          # @example Check for single admin
-          #   users.async.one? { |u| u.admin? }  # => true if exactly one admin
-          #
-          # @example With validation
-          #   configs.async.one? { |c| c.primary? }
-          #   # Validates all configs in parallel, ensures only one is primary
+          # Returns true if exactly one element satisfies the condition (parallel).
+          # @yield [item] Test condition for each element
+          # @return [Boolean] true if exactly one element matches
           def one?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
