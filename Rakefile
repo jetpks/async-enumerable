@@ -12,7 +12,7 @@ task default: %i[spec standard]
 desc "Run quick benchmark overview"
 task :benchmark_quick do
   require "benchmark"
-  require_relative "lib/async_enumerable"
+  require_relative "lib/async/enumerable"
 
   # Simulate IO operations with random delays
   def io_operation(n)

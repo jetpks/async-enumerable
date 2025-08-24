@@ -10,7 +10,7 @@ module Enumerable
   # improvements when dealing with I/O-bound operations or large collections.
   #
   # @param max_fibers [Integer, nil] Maximum number of concurrent fibers,
-  #   defaults to AsyncEnumerable.max_fibers
+  #   defaults to Async::Enumerable.max_fibers
   #
   # @example Basic usage with async map
   #   [1, 2, 3].async.map { |n| n * 2 }  # => [2, 4, 6] (executed in parallel)
@@ -28,12 +28,12 @@ module Enumerable
   #       .map { |item| process(item) }
   #       .to_a
   #
-  # @return [AsyncEnumerable::AsyncEnumerator] An async wrapper around this
+  # @return [Async::Enumerable::AsyncEnumerator] An async wrapper around this
   #   enumerable that provides parallel execution capabilities for enumerable
   #   methods
   #
-  # @see AsyncEnumerable::AsyncEnumerator
+  # @see Async::Enumerable::AsyncEnumerator
   def async(max_fibers: nil)
-    AsyncEnumerable::AsyncEnumerator.new(self, max_fibers:)
+    Async::Enumerable::AsyncEnumerator.new(self, max_fibers:)
   end
 end

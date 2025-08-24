@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    async_enumerable (0.1.0)
+    async-enumerable (0.1.0)
       async (~> 2.27)
       concurrent-ruby (~> 1.3)
 
@@ -124,7 +124,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  async_enumerable!
+  async-enumerable!
   benchmark-driver
   irb
   pry

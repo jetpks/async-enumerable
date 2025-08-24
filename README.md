@@ -1,6 +1,6 @@
-# AsyncEnumerable
+# Async::Enumerable
 
-AsyncEnumerable extends Ruby's Enumerable module with asynchronous
+Async::Enumerable extends Ruby's Enumerable module with asynchronous
 capabilities, allowing you to perform operations in parallel using the
 [socketry/async](https://github.com/socketry/async) library.
 
@@ -8,21 +8,21 @@ capabilities, allowing you to perform operations in parallel using the
 
 In your bundler-managed project, run
 ```bash
-bundle add async_enumerable
+bundle add async-enumerable
 ```
 
 Or to install globally:
 ```bash
-gem install async_enumerable
+gem install async-enumerable
 ```
 
 ## Usage
 
-AsyncEnumerable adds an `.async` method to any Enumerable object, which returns
+Async::Enumerable adds an `.async` method to any Enumerable object, which returns
 an AsyncEnumerator that performs operations in parallel:
 
 ```ruby
-require 'async_enumerable'
+require 'async/enumerable'
 
 # Convert any enumerable to async
 results = [1, 2, 3, 4, 5].async.map { |n| n * 2 }
@@ -40,10 +40,10 @@ data.async
 
 ### Parallel Execution
 
-The main benefit of AsyncEnumerable is parallel execution of block operations:
+The main benefit of Async::Enumerable is parallel execution of block operations:
 
 ```ruby
-require 'async_enumerable'
+require 'async/enumerable'
 require 'net/http'
 
 urls = [
@@ -65,7 +65,7 @@ end
 
 ### Supported Methods
 
-AsyncEnumerable provides async implementations for methods that can benefit
+Async::Enumerable provides async implementations for methods that can benefit
 from parallel execution:
 
 #### Iteration
@@ -90,11 +90,11 @@ from parallel execution:
 
 ### When to Use Async
 
-AsyncEnumerable is beneficial when:
+Async::Enumerable is beneficial when:
 - Operations in the block are I/O bound (network requests, file operations)
 - You have a large collection with expensive operations per element
 
-AsyncEnumerable may not help (and could be slower) when:
+Async::Enumerable may not help (and could be slower) when:
 - Operations are very fast/simple
 - Order of execution matters
 - Operations depend on previous results
@@ -178,7 +178,7 @@ For very large collections, limiting concurrent fibers can improve performance:
 (1..10000).async(max_fibers: 100).map { |n| process(n) }
 
 # Configure global default
-AsyncEnumerable.max_fibers = 100
+Async::Enumerable.max_fibers = 100
 ```
 
 ### Running Benchmarks
@@ -217,7 +217,7 @@ You can create your own benchmarks using benchmark-driver's YAML format:
 
 ```yaml
 prelude: |
-  require 'async_enumerable'
+  require 'async/enumerable'
   
   def expensive_operation(n)
     sleep(rand / 100.0) # Simulate 0-10ms IO
@@ -239,7 +239,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/jetpks/async_enumerable. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/jetpks/async_enumerable/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/jetpks/async-enumerable. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/jetpks/async-enumerable/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -247,4 +247,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the AsyncEnumerable project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/jetpks/async_enumerable/blob/main/CODE_OF_CONDUCT.md).
+Everyone interacting in the Async::Enumerable project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/jetpks/async-enumerable/blob/main/CODE_OF_CONDUCT.md).

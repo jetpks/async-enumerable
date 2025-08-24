@@ -1,5 +1,5 @@
 prelude: |
-  require 'async_enumerable'
+  require 'async/enumerable'
   
   # Simulate IO operation that checks a condition
   def check_condition(n)

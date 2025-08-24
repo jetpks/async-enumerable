@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "async_enumerable"
+require "async/enumerable"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

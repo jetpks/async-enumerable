@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe AsyncEnumerable do
+RSpec.describe Async::Enumerable do
   it "has a version number" do
-    expect(AsyncEnumerable::VERSION).not_to be nil
+    expect(Async::Enumerable::VERSION).not_to be nil
   end
 end

@@ -1,5 +1,5 @@
 prelude: |
-  require 'async_enumerable'
+  require 'async/enumerable'
   
   # Simulate IO operations with minimal delay for very large collections
   def io_operation(n)

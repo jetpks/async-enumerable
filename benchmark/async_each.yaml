@@ -1,5 +1,5 @@
 prelude: |
-  require 'async_enumerable'
+  require 'async/enumerable'
   
   # Simulate IO side effect operation
   # Scale down delay for larger collections to avoid timeouts

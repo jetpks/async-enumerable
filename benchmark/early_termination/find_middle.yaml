@@ -1,5 +1,5 @@
 prelude: |
-  require 'async_enumerable'
+  require 'async/enumerable'
   
   # Simulate IO operation for searching
   def matches_criteria?(n)
