@@ -5,26 +5,9 @@ module Async
     module Methods
       module Predicates
         module All
-          # Asynchronously checks if all elements satisfy the given condition.
-          #
-          # Executes the block for each element in parallel and returns true if all
-          # elements return a truthy value. Short-circuits and returns false as
-          # soon as any element returns a falsy value.
-          #
-          # @yield [item] Block to test each element
-          # @yieldparam item Each element from the enumerable
-          # @yieldreturn [Boolean] Whether the element satisfies the condition
-          #
-          # @return [Boolean] true if all elements satisfy the condition, false
-          #   otherwise
-          #
-          # @example Check if all numbers are positive
-          #   [1, 2, 3].async.all? { |n| n > 0 }  # => true
-          #   [1, -2, 3].async.all? { |n| n > 0 } # => false (stops after -2)
-          #
-          # @example With expensive operations
-          #   urls.async.all? { |url| validate_url(url) }
-          #   # Validates all URLs in parallel, stops on first invalid
+          # Returns true if all elements satisfy the condition (parallel, early termination).
+          # @yield [item] Test condition for each element
+          # @return [Boolean] true if all elements match
           def all?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern

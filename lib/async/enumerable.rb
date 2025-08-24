@@ -19,65 +19,16 @@ require "async/enumerable/methods"
 require "async/enumerable/version"
 
 module Async
-  # Async::Enumerable provides asynchronous, parallel execution capabilities
-  # for Ruby's Enumerable.
-  #
-  # This gem extends Ruby's Enumerable module with an `.async` method that
-  # returns an AsyncEnumerator wrapper, enabling concurrent execution of
-  # enumerable operations using the socketry/async library. This allows for
-  # significant performance improvements when dealing with I/O-bound operations
-  # or processing large collections.
-  #
-  # ## Features
-  #
-  # - Parallel execution of enumerable methods
-  # - Thread-safe operation with atomic variables
-  # - Optimized early-termination implementations for predicates and find
-  #   operations
-  # - Full compatibility with standard Enumerable interface
-  # - Configurable concurrency limits to prevent unbounded fiber creation
-  #
-  # ## Usage
-  #
-  # @example Basic async enumeration
-  #   [1, 2, 3, 4, 5].async.map { |n| n * 2 }
-  #   # => [2, 4, 6, 8, 10] (processed in parallel)
-  #
-  # @example Async I/O operations
-  #   urls = ["http://api1.com", "http://api2.com", "http://api3.com"]
-  #   results = urls.async.map { |url| fetch_data(url) }
-  #   # All URLs fetched concurrently
-  #
-  # @example Early termination optimization
-  #   large_array.async.any? { |item| expensive_check(item) }
-  #   # Stops as soon as one item returns true
-  #
-  # @example Chaining async operations
-  #   data.async
-  #       .select { |item| item.active? }
-  #       .map { |item| transform(item) }
-  #       .reject { |item| item.invalid? }
-  #       .to_a
-  #
-  # @example Configuring maximum fiber limits
-  #   # Set global default
-  #   Async::Enumerable.max_fibers = 100
-  #
-  #   # Or per-instance
-  #   huge_dataset.async(max_fibers: 50).map { |item| process(item) }
-  #
-  # @see Enumerable#async
-  # @see Async::Enumerator
+  # Provides async parallel execution for Enumerable.
+  # See docs/reference/enumerable.md for detailed documentation.
   module Enumerable
     DEFAULT_MAX_FIBERS = 1024
 
     class << self
       attr_writer :max_fibers
 
-      # Gets the default maximum number of fibers for async operations.
-      # Defaults to 1024 if not explicitly set.
-      #
-      # @return [Integer] The current maximum fiber limit
+      # Gets default max fibers (defaults to 1024).
+      # @return [Integer] Maximum fiber limit
       def max_fibers
         @max_fibers ||= DEFAULT_MAX_FIBERS
       end
@@ -92,11 +43,11 @@ module Async
       base.include(AsyncMethod)  # Include async method last to override Enumerable's
     end
 
-    # Module containing the async method that needs to override Enumerable's version
+    # Async method module - included last to override Enumerable's version.
     module AsyncMethod
-      # Default async method when no def_enumerator is called
-      # This allows including classes to call async on self
-      # If already async (is an Async::Enumerator), returns self for idempotent chaining
+      # Returns async enumerator (idempotent - returns self if already async).
+      # @param max_fibers [Integer, nil] Concurrency limit
+      # @return [Async::Enumerator] Async wrapper
       def async(max_fibers: nil)
         # If we're already an Async::Enumerator, just return self
         # This makes .async.async.async idempotent
@@ -121,26 +72,9 @@ module Async
     end
 
     module ClassMethods
-      # Define the source of enumeration for async operations
-      #
-      # @param method_name [Symbol] The name of the method or attribute that returns the enumerable
-      # @param max_fibers [Integer, nil] Optional default max_fibers for this enumerator
-      #
-      # @example Basic usage
-      #   class MyCollection
-      #     include Async::Enumerable
-      #     def_enumerator :items
-      #
-      #     def initialize
-      #       @items = []
-      #     end
-      #
-      #     attr_reader :items
-      #   end
-      #
-      #   collection = MyCollection.new
-      #   collection.items << 1 << 2 << 3
-      #   collection.async.map { |x| x * 2 } # => [2, 4, 6]
+      # Defines enumerable source for async operations.
+      # @param method_name [Symbol] Method/ivar returning enumerable
+      # @param max_fibers [Integer, nil] Default concurrency limit
       def def_enumerator(method_name, max_fibers: nil)
         @enumerable_source = method_name
         @default_max_fibers = max_fibers
