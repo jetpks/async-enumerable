@@ -42,13 +42,15 @@ RSpec.describe Async::Enumerable::Config do
 
   describe "config precedence in Async::Enumerator" do
     before do
-      # Reset module config
-      Async::Enumerable.instance_variable_set(:@config, nil)
+      # Reset module config to default
+      config_ref = Async::Enumerable.instance_variable_get(:@config_ref)
+      config_ref&.set(Async::Enumerable::Config.default)
     end
 
     after do
-      # Clean up
-      Async::Enumerable.instance_variable_set(:@config, nil)
+      # Clean up - reset to default
+      config_ref = Async::Enumerable.instance_variable_get(:@config_ref)
+      config_ref&.set(Async::Enumerable::Config.default)
     end
 
     it "uses module config as base when no config passed" do

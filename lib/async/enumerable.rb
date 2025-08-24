@@ -23,14 +23,25 @@ module Async
   # Provides async parallel execution for Enumerable.
   # See docs/reference/enumerable.md for detailed documentation.
   module Enumerable
+    # Initialize the config reference once when the module loads
+    @config_ref = Concurrent::AtomicReference.new(Config.default)
+
     class << self
       # Gets or creates the module-level config.
       # @param kwargs [Hash] Optional configuration updates
       # @return [Config] Module configuration
       def config(**kwargs)
-        @config ||= Config.default
-        @config = @config.with(**kwargs) unless kwargs.empty?
-        @config
+        # Get the current config
+        current = @config_ref.get
+
+        # If kwargs provided, create updated config and set it
+        unless kwargs.empty?
+          updated = current.with(**kwargs)
+          @config_ref.set(updated)
+          current = updated
+        end
+
+        current
       end
 
       # Gets default max fibers (defaults to 1024).
@@ -59,7 +70,7 @@ module Async
     # Module providing config accessor method
     module ConfigAccessor
       def __async_enumerable_config
-        @async_enumerable_config
+        @async_enumerable_config || Async::Enumerable.config
       end
     end
 
