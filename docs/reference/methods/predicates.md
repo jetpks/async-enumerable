@@ -125,7 +125,7 @@ configs.async.one? { |c| c.primary? }
 
 Asynchronously finds the first element that satisfies the given condition.
 
-Executes the block for each element in parallel and returns the first element that matches. Uses thread-safe synchronization to ensure that the "first" element returned is the first in enumeration order, not just the first to complete.
+**Important:** Returns the **fastest completing** match, not necessarily the first element by position in the collection. Due to parallel execution, whichever element completes evaluation first will be returned. If you need the first element by position, use synchronous `find` instead.
 
 ### Parameters
 - `ifnone` (optional): Proc to call if no element is found
@@ -137,28 +137,32 @@ The first matching element, or nil/ifnone result if not found
 ### Examples
 
 ```ruby
-# Find first prime number
+# Find any prime number (fastest to compute)
 numbers.async.find { |n| prime?(n) }
 
 # With fallback
 users.async.find(-> { User.new }) { |u| u.admin? }
 # Returns new User if no admin found
 
-# With expensive checks
+# With expensive checks - returns fastest result
 documents.async.find { |doc| analyze_content(doc).contains_keyword? }
-# Analyzes all documents in parallel, returns first match
+# Analyzes all documents in parallel, returns fastest match
+
+# When order matters, use synchronous version
+first_prime = numbers.find { |n| prime?(n) }
 ```
 
 ### Implementation Notes
-- Uses `Concurrent::AtomicReference` to track first match by index
-- Maintains enumeration order despite parallel execution
+- Uses `Concurrent::AtomicReference` with compare-and-set for first completion
+- Returns whichever matching element completes evaluation first
 - Supports `ifnone` proc for custom fallback behavior
+- Stops all remaining evaluations once a match is found
 
 ## find_index
 
 Asynchronously finds the index of the first element that satisfies the given condition.
 
-Executes the block for each element in parallel and returns the index of the first element that matches. Ensures the returned index is the first in enumeration order.
+**Important:** Returns the index of the **fastest completing** match, not necessarily the first by position in the collection. Due to parallel execution, whichever element completes evaluation first will have its index returned. If you need the first index by position, use synchronous `find_index` instead.
 
 ### Parameters
 - `value` (optional): Value to find the index of
@@ -170,20 +174,24 @@ Executes the block for each element in parallel and returns the index of the fir
 ### Examples
 
 ```ruby
-# Find index of first large file
+# Find index of any large file (fastest to check)
 files.async.find_index { |f| f.size > 1_000_000 }
 
-# Find specific value
+# Find specific value - returns index of fastest equality check
 items.async.find_index("target")
 
-# With validation
+# With validation - returns index of fastest validation
 results.async.find_index { |r| r.status == :success }
+
+# When order matters, use synchronous version
+first_index = data.find_index { |item| expensive_check(item) }
 ```
 
 ### Implementation Notes
-- Uses `Concurrent::AtomicFixnum` to track minimum index
+- Uses `Concurrent::AtomicReference` with compare-and-set for first completion
+- Returns index of whichever element completes evaluation first
 - Handles both value-based and block-based searches
-- Maintains enumeration order despite parallel execution
+- Stops all remaining evaluations once a match is found
 
 ## include? / member?
 
