@@ -20,6 +20,7 @@ module AsyncEnumerable
     # @note This method executes synchronously as it requires sequential
     # ordering
     def take_while(&block)
+      return enum_for(__method__) unless block_given?
       # take_while needs sequential checking, so we can't parallelize
       # Defer to the synchronous implementation from Enumerable
       @enumerable.take_while(&block)

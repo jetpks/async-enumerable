@@ -19,7 +19,14 @@ module AsyncEnumerable
     #   results.async.none? { |r| r.error? }  # => true if no errors
     #
     # @see #any?
-    def none?(&block)
+    def none?(pattern = nil, &block)
+      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues  
+      if pattern
+        return @enumerable.none?(pattern)
+      elsif !block_given?
+        return @enumerable.none?
+      end
+      # For blocks, use our async any? and negate
       !any?(&block)
     end
   end

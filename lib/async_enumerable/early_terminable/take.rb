@@ -23,7 +23,8 @@ module AsyncEnumerable
     #   urls.async.take(5).map { |url| fetch(url) }
     #   # Fetches only the first 5 URLs in parallel
     def take(n)
-      return [] if n <= 0
+      raise ArgumentError, "attempt to take negative size" if n < 0
+      return [] if n == 0
 
       Sync do |parent|
         # Use a barrier to collect exactly n results

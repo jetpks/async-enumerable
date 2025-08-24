@@ -5,29 +5,31 @@ require "concurrent/atomic/atomic_reference"
 
 module AsyncEnumerable
   module EarlyTerminable
-    # Asynchronously finds the first element that satisfies the given
-    # condition.
+    # Asynchronously finds an element that satisfies the given condition.
     #
-    # Executes the block for each element in parallel and returns the first
-    # element for which the block returns truthy. Short-circuits and stops
-    # processing remaining elements once a match is found.
+    # Executes the block for each element in parallel and returns an element
+    # for which the block returns truthy. Short-circuits and stops processing
+    # remaining elements once a match is found.
     #
-    # Uses atomic compare-and-set to ensure only the first match is returned
-    # when multiple async tasks find matches simultaneously.
+    # Note: Due to parallel execution, this may not return the first matching
+    # element by position. It returns whichever matching element's check
+    # completes first. For guaranteed first match, use the synchronous version
+    # on the wrapped enumerable.
     #
     # @yield [item] Block to test each element
     # @yieldparam item Each element from the enumerable
     # @yieldreturn [Boolean] Whether this is the element to find
     #
-    # @return [Object, nil] The first matching element, or nil if none found
+    # @return [Object, nil] A matching element, or nil if none found
     #
     # @example Find first valid record
     #   records.async.find { |r| r.valid? && r.active? }
     #
     # @example With expensive computation
     #   datasets.async.find { |data| expensive_analysis(data) > threshold }
-    #   # Analyzes all datasets in parallel, returns first match
-    def find(&block)
+    #   # Analyzes all datasets in parallel, returns a match
+    #   # (not necessarily the first by position due to parallel execution)
+    def find(ifnone = nil, &block)
       return super unless block_given?
 
       Sync do |parent|
@@ -49,9 +51,18 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        barrier.wait rescue Async::Stop
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Expected when barrier.stop is called for early termination
+        end
 
-        result.get
+        found = result.get
+        if found.nil? && ifnone
+          ifnone.call
+        else
+          found
+        end
       end
     end
 

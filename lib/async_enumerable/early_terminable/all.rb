@@ -25,8 +25,13 @@ module AsyncEnumerable
     # @example With expensive operations
     #   urls.async.all? { |url| validate_url(url) }
     #   # Validates all URLs in parallel, stops on first invalid
-    def all?(&block)
-      return super unless block_given?
+    def all?(pattern = nil, &block)
+      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
+      if pattern
+        return @enumerable.all?(pattern)
+      elsif !block_given?
+        return @enumerable.all?
+      end
 
       Sync do |parent|
         barrier = Async::Barrier.new(parent:)
@@ -45,7 +50,11 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        barrier.wait rescue Async::Stop
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Expected when barrier.stop is called for early termination
+        end
 
         !failed.true?
       end

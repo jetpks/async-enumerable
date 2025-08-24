@@ -8,24 +8,12 @@ RSpec.describe AsyncEnumerable::AsyncEnumerator do
       result = [1, 2, 3].async
       expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
     end
-
-    it "works with arrays" do
-      result = [1, 2, 3].async
-      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
-    end
-
-    it "works with ranges" do
-      result = (1..3).async
-      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
-    end
-
-    it "works with sets" do
-      require "set"
-      result = Set[1, 2, 3].async
-      expect(result).to be_a(AsyncEnumerable::AsyncEnumerator)
-    end
   end
 
+  # TODO: this is here because we originally implemented `map` separately from
+  # `each`, but now we just use Enumerable.map which uses our asynchronous
+  # `each` -- let's make sure these test cases are adequately covered by other
+  # tests in the suite and if so, let's remove them
   describe "#map" do
     it "applies block to all elements" do
       result = [1, 2, 3].async.map { |x| x * 2 }

@@ -24,8 +24,13 @@ module AsyncEnumerable
     # @example With validation
     #   configs.async.one? { |c| c.primary? }
     #   # Validates all configs in parallel, ensures only one is primary
-    def one?(&block)
-      return super unless block_given?
+    def one?(pattern = nil, &block)
+      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
+      if pattern
+        return @enumerable.one?(pattern)
+      elsif !block_given?
+        return @enumerable.one?
+      end
 
       Sync do |parent|
         barrier = Async::Barrier.new(parent:)
@@ -45,7 +50,11 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        barrier.wait rescue Async::Stop
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Expected when barrier.stop is called for early termination
+        end
 
         count.value == 1
       end

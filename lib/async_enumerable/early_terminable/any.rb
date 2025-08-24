@@ -25,8 +25,13 @@ module AsyncEnumerable
     # @example With API calls
     #   servers.async.any? { |server| server_responding?(server) }
     #   # Checks all servers in parallel, returns true on first response
-    def any?(&block)
-      return super unless block_given?
+    def any?(pattern = nil, &block)
+      # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
+      if pattern
+        return @enumerable.any?(pattern)
+      elsif !block_given?
+        return @enumerable.any?
+      end
 
       Sync do |parent|
         barrier = Async::Barrier.new(parent:)
@@ -45,7 +50,11 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        barrier.wait rescue Async::Stop
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Expected when barrier.stop is called for early termination
+        end
 
         found.true?
       end

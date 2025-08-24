@@ -21,6 +21,7 @@ RSpec.describe "AsyncEnumerable::AsyncEnumerator#each" do
     end
 
     it "executes blocks in parallel" do
+      # TODO: let's use Async::Clock for time keeping instead of Time
       start_time = Time.now
       sleep_duration = 0.1
       execution_times = []

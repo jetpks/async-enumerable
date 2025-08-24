@@ -5,14 +5,16 @@ require "concurrent/atomic/atomic_reference"
 
 module AsyncEnumerable
   module EarlyTerminable
-    # Asynchronously finds the index of the first element that matches.
+    # Asynchronously finds the index of an element that matches.
     #
     # Can be called with either a value to search for or a block to test
-    # elements. Executes in parallel and returns the index of the first match.
+    # elements. Executes in parallel and returns the index of a matching element.
     # Short-circuits once a match is found.
     #
-    # Uses atomic compare-and-set to ensure the lowest index is returned when
-    # multiple matches are found simultaneously.
+    # Note: Due to parallel execution, this may not return the lowest index
+    # when multiple elements match. It returns the index of whichever matching
+    # element completes first. For guaranteed lowest index, use the synchronous
+    # version on the wrapped enumerable.
     #
     # @overload find_index(value)
     #   @param value The value to search for
@@ -29,10 +31,11 @@ module AsyncEnumerable
     #
     # @example Find index by condition
     #   numbers.async.find_index { |n| n.prime? }
-    #   # Checks all numbers in parallel, returns index of first prime
-    def find_index(value = nil, &block)
-      if value.nil? && !block_given?
-        return super
+    #   # Checks all numbers in parallel, returns index of a prime number
+    #   # (not necessarily the first prime due to parallel execution)
+    def find_index(value = (no_value = true), &block)
+      if no_value && !block_given?
+        return enum_for(__method__)
       end
 
       Sync do |parent|
@@ -43,7 +46,7 @@ module AsyncEnumerable
           break unless result_index.get.nil?
 
           barrier.async do
-            match = value.nil? ? block.call(item) : (item == value)
+            match = no_value ? block.call(item) : (item == value)
             if match
               # Use compare_and_set to ensure only the first match wins
               if result_index.compare_and_set(nil, index)
@@ -55,7 +58,11 @@ module AsyncEnumerable
         end
 
         # Wait for all tasks or until barrier is stopped early
-        barrier.wait rescue Async::Stop
+        begin
+          barrier.wait
+        rescue Async::Stop
+          # Expected when barrier.stop is called for early termination
+        end
 
         result_index.get
       end

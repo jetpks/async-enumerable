@@ -27,6 +27,7 @@ module AsyncEnumerable
         # Just get the first element synchronously
         @enumerable.first
       else
+        raise ArgumentError, "attempt to take negative size" if n < 0
         # Get first n elements
         take(n)
       end
