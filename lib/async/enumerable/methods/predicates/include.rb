@@ -5,6 +5,8 @@ module Async
     module Methods
       module Predicates
         module Include
+          def self.included(base) = base.include(Any) # Dependency
+
           # Checks if enumerable includes the object (parallel, early termination).
           # @param obj Object to search for
           # @return [Boolean] true if found

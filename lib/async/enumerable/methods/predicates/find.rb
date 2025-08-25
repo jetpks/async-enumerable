@@ -5,6 +5,12 @@ module Async
     module Methods
       module Predicates
         module Find
+          def self.included(base)
+            base.include(::Enumerable) # Dependency
+            base.include(CollectionResolver) # Dependency
+            base.include(ConcurrencyBounder) # Dependency
+          end
+
           # Returns first element that satisfies condition (parallel, early termination).
           # @note Returns the **fastest completing** match, not necessarily the first by position.
           #   Due to parallel execution, whichever element completes evaluation first will be returned.
@@ -16,8 +22,8 @@ module Async
 
             result = Concurrent::AtomicReference.new(nil)
 
-            with_bounded_concurrency(early_termination: true) do |barrier|
-              enumerable_source.each do |item|
+            __async_enumerable_bounded_concurrency(early_termination: true) do |barrier|
+              __async_enumerable_collection.each do |item|
                 break unless result.get.nil?
 
                 barrier.async do

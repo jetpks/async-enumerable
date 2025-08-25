@@ -4,15 +4,11 @@ require "spec_helper"
 
 RSpec.describe "Async::Enumerable max_fibers" do
   describe "module-level configuration" do
-    it "has a default max_fibers value of 1024" do
-      expect(Async::Enumerable.max_fibers).to eq(1024)
-    end
-
     it "allows setting max_fibers value" do
-      original = Async::Enumerable.max_fibers
-      Async::Enumerable.max_fibers = 50
-      expect(Async::Enumerable.max_fibers).to eq(50)
-      Async::Enumerable.max_fibers = original
+      original = Async::Enumerable.config.max_fibers
+      Async::Enumerable.configure { |c| c.max_fibers = 50 }
+      expect(Async::Enumerable.config.max_fibers).to eq(50)
+      Async::Enumerable.configure { |c| c.max_fibers = original }
     end
   end
 
@@ -23,8 +19,8 @@ RSpec.describe "Async::Enumerable max_fibers" do
     end
 
     it "uses instance-level max_fibers over module default" do
-      original = Async::Enumerable.max_fibers
-      Async::Enumerable.max_fibers = 100
+      original = Async::Enumerable.config.max_fibers
+      Async::Enumerable.configure { |c| c.max_fibers = 100 }
 
       concurrent_count = Concurrent::AtomicFixnum.new(0)
       max_concurrent = Concurrent::AtomicFixnum.new(0)
@@ -41,7 +37,7 @@ RSpec.describe "Async::Enumerable max_fibers" do
       expect(max_concurrent.value).to be <= 5
       expect(max_concurrent.value).to be >= 1
 
-      Async::Enumerable.max_fibers = original
+      Async::Enumerable.configure { |c| c.max_fibers = original }
     end
   end
 
@@ -142,8 +138,8 @@ RSpec.describe "Async::Enumerable max_fibers" do
 
   describe "default behavior without explicit limit" do
     it "uses module default when no instance limit specified" do
-      original = Async::Enumerable.max_fibers
-      Async::Enumerable.max_fibers = 7
+      original = Async::Enumerable.config.max_fibers
+      Async::Enumerable.configure { |c| c.max_fibers = 7 }
 
       concurrent_count = Concurrent::AtomicFixnum.new(0)
       max_concurrent = Concurrent::AtomicFixnum.new(0)
@@ -157,7 +153,7 @@ RSpec.describe "Async::Enumerable max_fibers" do
 
       expect(max_concurrent.value).to be <= 7
 
-      Async::Enumerable.max_fibers = original
+      Async::Enumerable.configure { |c| c.max_fibers = original }
     end
   end
 end

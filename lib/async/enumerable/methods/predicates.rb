@@ -14,13 +14,15 @@ module Async
       # Predicates contains async implementations of enumerable predicate methods
       # that can terminate early when their condition is met or violated.
       module Predicates
-        include All
-        include Any
-        include Find
-        include FindIndex
-        include Include
-        include None
-        include One
+        def self.included(base)
+          base.include All
+          base.include Any
+          base.include Find
+          base.include FindIndex
+          base.include Include
+          base.include None
+          base.include One
+        end
       end
     end
   end

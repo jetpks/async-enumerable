@@ -18,6 +18,14 @@ module Async
       # - chunk/chunk_while: Groups consecutive elements (maintains order)
       # - slice_before/slice_after/slice_when: Slices based on conditions (block executes async)
       module Slicers
+        def self.included(base)
+          base.include(Each) # Dependency
+          base.include(CollectionResolver) # Dependency
+
+          # Delegate non-parallelizable slicer methods directly to the collection
+          base.extend(Forwardable)
+          base.def_delegators :__async_enumerable_collection, :first, :take, :take_while
+        end
         # This module is intentionally empty as slicing methods are
         # inherited from Enumerable and automatically use our async #each
       end

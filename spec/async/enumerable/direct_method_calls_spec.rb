@@ -6,7 +6,7 @@ RSpec.describe "Direct method calls on includable classes" do
   let(:collection_class) do
     Class.new do
       include Async::Enumerable
-      def_enumerator :items
+      def_async_enumerable :items
 
       def initialize(items = [])
         @items = items
@@ -118,7 +118,7 @@ RSpec.describe "Direct method calls on includable classes" do
     end
   end
 
-  describe "when no def_enumerator is specified" do
+  describe "when no def_async_enumerable is specified" do
     let(:self_enumerable_class) do
       Class.new do
         include Enumerable

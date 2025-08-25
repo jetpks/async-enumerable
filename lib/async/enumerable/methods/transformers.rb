@@ -17,16 +17,18 @@ module Async
       # Transformers contains async implementations of enumerable transformation methods
       # that transform collections into new collections.
       module Transformers
-        include Compact
-        include FilterMap
-        include FlatMap
-        include Map
-        include Reject
-        include Select
+        def self.included(base)
+          base.include Compact
+          base.include FilterMap
+          base.include FlatMap
+          base.include Map
+          base.include Reject
+          base.include Select
 
-        include Sort
-        include SortBy
-        include Uniq
+          base.include Sort
+          base.include SortBy
+          base.include Uniq
+        end
       end
     end
   end

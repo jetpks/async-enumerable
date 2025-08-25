@@ -5,6 +5,12 @@ module Async
     module Methods
       module Predicates
         module FindIndex
+          def self.included(base)
+            base.include(::Enumerable) # Dependency
+            base.include(CollectionResolver) # Dependency
+            base.include(ConcurrencyBounder) # Dependency
+          end
+
           # Returns index of first matching element (parallel, early termination).
           # @note Returns the index of the **fastest completing** match, not necessarily the first by position.
           #   Due to parallel execution, whichever element completes evaluation first will have its index returned.
@@ -18,8 +24,8 @@ module Async
 
             result_index = Concurrent::AtomicReference.new(nil)
 
-            with_bounded_concurrency(early_termination: true) do |barrier|
-              enumerable_source.each_with_index do |item, index|
+            __async_enumerable_bounded_concurrency(early_termination: true) do |barrier|
+              __async_enumerable_collection.each_with_index do |item, index|
                 break unless result_index.get.nil?
 
                 barrier.async do

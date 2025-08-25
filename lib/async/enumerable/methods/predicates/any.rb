@@ -5,21 +5,27 @@ module Async
     module Methods
       module Predicates
         module Any
+          def self.included(base)
+            base.include(::Enumerable) # Dependency
+            base.include(CollectionResolver) # Dependency
+            base.include(ConcurrencyBounder) # Dependency
+          end
+
           # Returns true if any element satisfies the condition (parallel, early termination).
           # @yield [item] Test condition for each element
           # @return [Boolean] true if any element matches
           def any?(pattern = nil, &block)
             # Delegate pattern/no-block cases to wrapped enumerable to avoid break issues
             if pattern
-              return enumerable_source.any?(pattern)
+              return __async_enumerable_collection.any?(pattern)
             elsif !block_given?
-              return enumerable_source.any?
+              return __async_enumerable_collection.any?
             end
 
             found = Concurrent::AtomicBoolean.new(false)
 
-            with_bounded_concurrency(early_termination: true) do |barrier|
-              enumerable_source.each do |item|
+            __async_enumerable_bounded_concurrency(early_termination: true) do |barrier|
+              __async_enumerable_collection.each do |item|
                 break if found.true?
 
                 barrier.async do
