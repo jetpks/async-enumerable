@@ -5,7 +5,7 @@ require "spec_helper"
 # Test class for real-world example specs
 class TestTodoList
   include Async::Enumerable
-  def_enumerator :todos
+  def_async_enumerable :todos
 
   Todo = Struct.new(:title, :completed, keyword_init: true)
 
@@ -32,7 +32,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
     let(:collection_class) do
       Class.new do
         include Async::Enumerable
-        def_enumerator :items
+        def_async_enumerable :items
 
         def initialize(items = [])
           @items = items
@@ -47,9 +47,9 @@ RSpec.describe "Async::Enumerable includable pattern" do
       expect(collection).to respond_to(:async)
     end
 
-    it "returns an Async::Enumerator when calling async" do
+    it "returns an Async::Enumerable when calling async" do
       collection = collection_class.new([1, 2, 3])
-      expect(collection.async).to be_a(Async::Enumerator)
+      expect(collection.async.class).to include(Async::Enumerable)
     end
 
     it "supports async operations on the specified enumerable" do
@@ -75,11 +75,11 @@ RSpec.describe "Async::Enumerable includable pattern" do
     end
   end
 
-  describe "def_enumerator with max_fibers configuration" do
+  describe "def_async_enumerable with max_fibers configuration" do
     let(:limited_collection_class) do
       Class.new do
         include Async::Enumerable
-        def_enumerator :data, max_fibers: 2
+        def_async_enumerable :data, max_fibers: 2
 
         def initialize(data = [])
           @data = data
@@ -89,7 +89,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
       end
     end
 
-    it "respects the max_fibers limit set in def_enumerator" do
+    it "respects the max_fibers limit set in def_async_enumerable" do
       collection = limited_collection_class.new((1..10).to_a)
       concurrent_count = Concurrent::AtomicFixnum.new(0)
       max_concurrent = Concurrent::AtomicFixnum.new(0)
@@ -123,7 +123,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
     end
   end
 
-  describe "without def_enumerator" do
+  describe "without def_async_enumerable" do
     let(:enumerable_class) do
       Class.new do
         include Enumerable
@@ -139,7 +139,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
       end
     end
 
-    it "uses self as the enumerable source when no def_enumerator is specified" do
+    it "uses self as the enumerable source when no def_async_enumerable is specified" do
       collection = enumerable_class.new([1, 2, 3])
       result = collection.async.map { |x| x * 2 }.sync
       expect(result).to eq([2, 4, 6])
@@ -150,7 +150,7 @@ RSpec.describe "Async::Enumerable includable pattern" do
     let(:custom_class) do
       Class.new do
         include Async::Enumerable
-        def_enumerator :elements
+        def_async_enumerable :elements
 
         def initialize
           @elements = []

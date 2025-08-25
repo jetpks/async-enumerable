@@ -5,10 +5,12 @@ module Async
     module Methods
       module Transformers
         module Select
+          def self.included(base) = base.include(Each) # Dependency
+
           # Async version of select that returns an Async::Enumerator for chaining
           def select(&block)
             return enum_for(__method__) unless block_given?
-            self.class.new(super, max_fibers: @max_fibers)
+            Async::Enumerator.new(super, __async_enumerable_config)
           end
           alias_method :filter, :select
           alias_method :find_all, :select

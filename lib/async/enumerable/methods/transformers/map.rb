@@ -5,10 +5,14 @@ module Async
     module Methods
       module Transformers
         module Map
-          # Async version of map that returns an Async::Enumerator for chaining
+          def self.included(base) = base.include(Each) # Dependency
+
+          # Maps elements in parallel, returns async enumerator.
+          # @yield [item] Transform for each element
+          # @return [Async::Enumerator] Transformed collection
           def map(&block)
             return enum_for(__method__) unless block_given?
-            self.class.new(super, max_fibers: @max_fibers)
+            Async::Enumerator.new(super, __async_enumerable_config)
           end
           alias_method :collect, :map
         end

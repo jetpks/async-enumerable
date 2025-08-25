@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#none?" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#none?" do
   describe "#none?" do
     it "returns true when no elements match" do
       result = [1, 3, 5].async.none? { |n| n.even? }

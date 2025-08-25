@@ -6,7 +6,7 @@ This directory contains detailed reference documentation for the async-enumerabl
 
 - [Async::Enumerable Module](enumerable.md) - Main module for adding async capabilities to enumerables
 - [Async::Enumerator Class](enumerator.md) - Wrapper class providing async enumerable methods
-- [FiberLimiter Module](fiber_limiter.md) - Bounded concurrency control
+- [ConcurrencyBounder Module](concurrency_bounder.md) - Bounded concurrency control
 
 ## Method Categories
 

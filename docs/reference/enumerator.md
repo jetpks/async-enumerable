@@ -25,10 +25,15 @@ The preferred way to create an Async::Enumerator:
 result = [1, 2, 3].async.map { |n| slow_operation(n) }
 ```
 
-### With Custom Fiber Limit
+### With Configuration
 
 ```ruby
+# With custom fiber limit
 huge_dataset.async(max_fibers: 100).map { |n| process(n) }
+
+# With config object
+config = Async::Enumerable::Configurable::Config.new(max_fibers: 50)
+enumerator = Async::Enumerator.new(data, config)
 ```
 
 ## Initialization
@@ -36,16 +41,24 @@ huge_dataset.async(max_fibers: 100).map { |n| process(n) }
 ### Parameters
 
 - `enumerable` (Enumerable): Any object that includes Enumerable
-- `max_fibers` (Integer, nil): Maximum number of concurrent fibers, defaults to `Async::Enumerable.max_fibers`
+- `config` (Config, nil): Configuration object containing settings like max_fibers
+- `**kwargs`: Configuration options passed as keyword arguments (e.g., max_fibers: 100)
 
 ### Examples
 
 ```ruby
-# Default fiber limit
+# Default configuration
 async_array = Async::Enumerator.new([1, 2, 3])
 
-# Custom fiber limit
+# Custom fiber limit via kwargs
 async_range = Async::Enumerator.new(1..100, max_fibers: 50)
+
+# With config object
+config = Async::Enumerable::Configurable::Config.new(max_fibers: 100)
+async_enum = Async::Enumerator.new(data, config)
+
+# Override config with kwargs
+async_enum = Async::Enumerator.new(data, config, max_fibers: 200)
 ```
 
 ## Core Methods

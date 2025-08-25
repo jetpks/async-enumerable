@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#all?" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#all?" do
   describe "#all?" do
     it "returns true when all elements match" do
       result = [2, 4, 6].async.all? { |n| n.even? }

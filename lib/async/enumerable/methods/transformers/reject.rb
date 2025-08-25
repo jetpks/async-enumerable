@@ -5,10 +5,12 @@ module Async
     module Methods
       module Transformers
         module Reject
+          def self.included(base) = base.include(Each) # Dependency
+
           # Async version of reject that returns an Async::Enumerator for chaining
           def reject(&block)
             return enum_for(__method__) unless block_given?
-            self.class.new(super, max_fibers: @max_fibers)
+            Async::Enumerator.new(super, __async_enumerable_config)
           end
         end
       end

@@ -5,9 +5,11 @@ module Async
     module Methods
       module Transformers
         module Sort
+          def self.included(base) = base.include(Each) # Dependency
+
           # Async version of sort that returns an Async::Enumerator for chaining
           def sort(&block)
-            self.class.new(super, max_fibers: @max_fibers)
+            Async::Enumerator.new(super, __async_enumerable_config)
           end
         end
       end

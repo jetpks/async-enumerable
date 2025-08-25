@@ -18,8 +18,9 @@ module Async
       # - cycle: Cycles through elements repeatedly (block executes async)
       # - with_index: Adds index to any enumerator
       module Iterators
+        def self.included(base) = base.include(Each) # Dependency
         # This module is intentionally empty as iteration methods are
-        # inherited from Enumerable and automatically use our async #each
+        # inherited from Enumerable
       end
     end
   end

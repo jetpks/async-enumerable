@@ -4,7 +4,7 @@ The `Async::Enumerable` module provides asynchronous, parallel execution capabil
 
 ## Overview
 
-This module extends Ruby's Enumerable with an `.async` method that returns an AsyncEnumerator wrapper, enabling concurrent execution of enumerable operations using the socketry/async library. This allows for significant performance improvements when dealing with I/O-bound operations or processing large collections.
+This module extends Ruby's Enumerable with an `.async` method that returns an Async::Enumerator wrapper, enabling concurrent execution of enumerable operations using the socketry/async library. This allows for significant performance improvements when dealing with I/O-bound operations or processing large collections.
 
 ## Features
 
@@ -21,7 +21,7 @@ This module extends Ruby's Enumerable with an `.async` method that returns an As
 ```ruby
 class MyCollection
   include Async::Enumerable
-  def_enumerator :items
+  def_async_enumerable :@items
   
   def initialize
     @items = []
@@ -48,20 +48,20 @@ results = urls.async.map { |url| fetch_data(url) }
 # All URLs fetched concurrently
 ```
 
-## The def_enumerator Method
+## The def_async_enumerable Method
 
-The `def_enumerator` class method defines the source of enumeration for async operations.
+The `def_async_enumerable` class method defines the source of enumeration for async operations.
 
 ### Syntax
 
 ```ruby
-def_enumerator :method_name, max_fibers: nil
+def_async_enumerable :collection_ref, max_fibers: nil
 ```
 
 ### Parameters
 
-- `method_name` (Symbol): The name of the method or instance variable that returns the enumerable
-- `max_fibers` (Integer, optional): Default max_fibers for this enumerator
+- `collection_ref` (Symbol): The name of the method or instance variable that returns the enumerable
+- `max_fibers` (Integer, optional): Default max_fibers for this class
 
 ### Examples
 
@@ -70,7 +70,7 @@ def_enumerator :method_name, max_fibers: nil
 ```ruby
 class DataProcessor
   include Async::Enumerable
-  def_enumerator :dataset
+  def_async_enumerable :dataset
   
   def dataset
     fetch_data_from_source
@@ -83,7 +83,7 @@ end
 ```ruby
 class Queue
   include Async::Enumerable
-  def_enumerator :@items  # Note the @ prefix
+  def_async_enumerable :@items  # Note the @ prefix
   
   def initialize
     @items = []
@@ -96,7 +96,7 @@ end
 ```ruby
 class LargeDataset
   include Async::Enumerable
-  def_enumerator :records, max_fibers: 50
+  def_async_enumerable :@records, max_fibers: 50
   
   attr_reader :records
 end
@@ -125,7 +125,7 @@ This prevents unnecessary wrapper creation and allows for flexible API design.
 Set the global default maximum fibers:
 
 ```ruby
-Async::Enumerable.max_fibers = 100
+Async::Enumerable.configure { |c| c.max_fibers = 100 }
 ```
 
 ### Per-Instance
@@ -168,17 +168,17 @@ These return new `Async::Enumerator` instances for chaining.
 ### Module Inclusion
 
 When included, `Async::Enumerable` automatically:
-1. Includes standard `::Enumerable`
-2. Includes `::Comparable`
-3. Extends with `ClassMethods` (provides `def_enumerator`)
+1. Extends with `Configurable` for configuration management
+2. Extends with `ClassMethods` (provides `def_async_enumerable`)
+3. Includes `Comparable` for comparison operators
 4. Includes all async method implementations
-5. Includes fiber limiting functionality
-6. Overrides the global `async` method
+5. Includes `ConcurrencyBounder` for fiber limiting
+6. Includes `AsyncMethod` module that provides the `async` method
 
 ### Source Resolution
 
 The enumerable source is determined by:
-1. If `def_enumerator` was called, uses that source
+1. If `def_async_enumerable` was called, uses that source
 2. If source is an instance variable (starts with @), uses `instance_variable_get`
 3. If source is a method name, calls that method
 4. If no source defined, assumes self is enumerable
@@ -190,7 +190,7 @@ The enumerable source is determined by:
 ```ruby
 class ApiClient
   include Async::Enumerable
-  def_enumerator :endpoints
+  def_async_enumerable :endpoints
   
   def endpoints
     ["users", "posts", "comments"]
@@ -207,7 +207,7 @@ end
 ```ruby
 class BatchProcessor
   include Async::Enumerable
-  def_enumerator :@items, max_fibers: 10
+  def_async_enumerable :@items, max_fibers: 10
   
   def initialize(items)
     @items = items
@@ -224,7 +224,7 @@ end
 ```ruby
 class ThreadSafeQueue
   include Async::Enumerable
-  def_enumerator :snapshot
+  def_async_enumerable :snapshot
   
   def initialize
     @mutex = Mutex.new

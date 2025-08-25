@@ -1,10 +1,10 @@
-# FiberLimiter Module
+# ConcurrencyBounder Module
 
-The `FiberLimiter` module provides bounded concurrency control for async operations.
+The `ConcurrencyBounder` module provides bounded concurrency control for async operations.
 
 ## Overview
 
-FiberLimiter provides a helper method for executing async operations with a maximum fiber limit to prevent unbounded concurrency. This module is included in `Async::Enumerator` and `Async::Enumerable` to provide a consistent way to limit the number of concurrent fibers created during async operations.
+ConcurrencyBounder provides a helper method for executing async operations with a maximum fiber limit to prevent unbounded concurrency. This module is included in `Async::Enumerable` to provide a consistent way to limit the number of concurrent fibers created during async operations.
 
 ## Core Method
 
@@ -55,9 +55,10 @@ Gets the maximum number of fibers for this instance.
 
 #### Behavior
 
-1. Returns instance variable `@max_fibers` if set
-2. Falls back to `Async::Enumerable.max_fibers` global default
-3. Global default is 1024 if not configured
+1. Returns from instance config if set
+2. Falls back to class config if defined
+3. Falls back to `Async::Enumerable.config.max_fibers` module default
+4. Module default is 1024 if not configured
 
 ## Implementation Details
 
@@ -140,27 +141,32 @@ end
 ### Global Default
 
 ```ruby
-Async::Enumerable.max_fibers = 100  # Set global default
+Async::Enumerable.configure { |c| c.max_fibers = 100 }  # Set global default
 ```
 
 ### Per Instance
 
 ```ruby
 class MyEnumerator
-  include FiberLimiter
+  include Async::Enumerable
+  def_async_enumerable :@items, max_fibers: 50  # Class-level default
   
-  def initialize(items, max_fibers: nil)
+  def initialize(items)
     @items = items
-    @max_fibers = max_fibers  # Instance override
   end
 end
+
+# Instance override
+enumerator = MyEnumerator.new(items)
+enumerator.async(max_fibers: 100).map { |item| process(item) }
 ```
 
 ### Precedence
 
-1. Instance `@max_fibers` (if set)
-2. Global `Async::Enumerable.max_fibers`
-3. Default constant (1024)
+1. Instance config (passed to `.async` method)
+2. Class config (set via `def_async_enumerable`)
+3. Module config (`Async::Enumerable.configure`)
+4. Default constant (1024)
 
 ## Performance Considerations
 
@@ -214,7 +220,7 @@ end
 
 ## Integration with Async Runtime
 
-FiberLimiter requires the async runtime via `Sync` blocks:
+ConcurrencyBounder requires the async runtime via `Sync` blocks:
 
 ```ruby
 def with_bounded_concurrency(...)

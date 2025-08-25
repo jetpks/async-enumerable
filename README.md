@@ -19,7 +19,7 @@ gem install async-enumerable
 ## Usage
 
 Async::Enumerable adds an `.async` method to any Enumerable object, which returns
-an AsyncEnumerator that performs operations in parallel:
+an Async::Enumerator that performs operations in parallel:
 
 ```ruby
 require 'async/enumerable'
@@ -45,7 +45,7 @@ Async::Enumerable can be included in your own classes to add async capabilities:
 ```ruby
 class TodoList
   include Async::Enumerable
-  def_enumerator :todos  # Specify which method returns the enumerable
+  def_async_enumerable :@todos  # Specify which ivar/method returns the enumerable
   
   def initialize
     @todos = []
@@ -71,7 +71,7 @@ You can also specify a default fiber limit for your class:
 ```ruby
 class ApiClient
   include Async::Enumerable
-  def_enumerator :endpoints, max_fibers: 10  # Limit concurrent requests
+  def_async_enumerable :@endpoints, max_fibers: 10  # Limit concurrent requests
   
   attr_reader :endpoints
 end
@@ -122,7 +122,7 @@ I/O or expensive operations.
 
 #### Methods with Optimized Early Termination
 
-The EarlyTerminable module provides optimized implementations that stop
+The Predicates module provides optimized implementations that stop
 processing as soon as the result is determined:
 
 - `all?` - Returns true if all elements match (stops on first false)
@@ -183,7 +183,10 @@ Async::Enumerable is organized into logical modules for better maintainability a
 - **`Async::Enumerable::Methods::Aggregators`** - Aggregation methods inherited from Enumerable (reduce, sum, count, etc.)
 - **`Async::Enumerable::Methods::Iterators`** - Iteration helpers inherited from Enumerable (each_with_index, each_cons, etc.)
 - **`Async::Enumerable::Methods::Slicers`** - Slicing/filtering methods inherited from Enumerable (drop, grep, partition, etc.)
-- **`Async::Enumerable::FiberLimiter`** - Cross-cutting concern for limiting concurrent fibers
+- **`Async::Enumerable::ConcurrencyBounder`** - Cross-cutting concern for limiting concurrent fibers
+- **`Async::Enumerable::Configurable`** - Configuration management system with hierarchical config inheritance
+- **`Async::Enumerable::CollectionResolver`** - Resolves the underlying collection from various sources
+- **`Async::Enumerable::Comparable`** - Comparison operators for async enumerators
 
 You can selectively include specific modules if needed:
 
@@ -192,7 +195,7 @@ class CustomAsync
   include Enumerable
   include Async::Enumerable::Methods::Transformers::Map
   include Async::Enumerable::Methods::Converters::Sync
-  include Async::Enumerable::FiberLimiter
+  include Async::Enumerable::ConcurrencyBounder
   
   # Only has async map and sync methods
 end
@@ -336,7 +339,13 @@ For very large collections, limiting concurrent fibers can improve performance:
 (1..10000).async(max_fibers: 100).map { |n| process(n) }
 
 # Configure global default
-Async::Enumerable.max_fibers = 100
+Async::Enumerable.configure { |c| c.max_fibers = 100 }
+
+# Configure at class level
+class MyClass
+  include Async::Enumerable
+  def_async_enumerable :@data, max_fibers: 50
+end
 ```
 
 ### Running Benchmarks
