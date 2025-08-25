@@ -1,416 +1,391 @@
 # Async::Enumerable
 
-Async::Enumerable extends Ruby's Enumerable module with asynchronous
-capabilities, allowing you to perform operations in parallel using the
-[socketry/async](https://github.com/socketry/async) library.
+[![Gem Version](https://badge.fury.io/rb/async-enumerable.svg)](https://rubygems.org/gems/async-enumerable)
+[![CI](https://github.com/jetpks/async-enumerable/workflows/CI/badge.svg)](https://github.com/jetpks/async-enumerable/actions)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Installation
+**Make your Ruby collections actually fast ⚡**
 
-In your bundler-managed project, run
-```bash
-bundle add async-enumerable
+You know that feeling when your API calls are running sequentially and you're watching your life slowly drain away? Yeah, we fixed that. This gem adds `.async` to Ruby's Enumerable, powered by [socketry/async](https://github.com/socketry/async) and [concurrent-ruby](https://github.com/ruby-concurrency/concurrent-ruby).
+
+```ruby
+# Before: ☕ Time for coffee...
+users = user_ids.map { |id| fetch_user(id) }  # 30 seconds for 30 users
+
+# After: ⚡ Lightning fast!
+users = user_ids.async.map { |id| fetch_user(id) }  # 1 second for 30 users!
 ```
 
-Or to install globally:
+## Why This Doesn't Suck
+
+- **Zero learning curve** - If you know `.map`, you know `.async.map`.
+- **Actually parallel** - Your I/O happens concurrently. Not threads, not processes, just fibers doing what they do best.
+- **Early termination** - `find` and `any?` bail out as soon as they can.
+- **Configurable concurrency** - Limit fibers when you need to. Default when you don't care.
+- **Works with ANY Enumerable** - Arrays, Ranges, Sets, that weird custom thing you built in 2019... it all works.
+
+## Quick Install
+
 ```bash
+# Add to your Gemfile
+bundle add async-enumerable
+
+# Or install directly
 gem install async-enumerable
 ```
 
-## Usage
+## Show Me The Code
 
-Async::Enumerable adds an `.async` method to any Enumerable object, which returns
-an Async::Enumerator that performs operations in parallel:
+### The Basics
+
+Add `.async` to any collection and watch it go BRRRRR:
 
 ```ruby
 require 'async/enumerable'
 
-# Convert any enumerable to async
-results = [1, 2, 3, 4, 5].async.map { |n| n * 2 }
-# => [2, 4, 6, 8, 10]
+# Transform any enumerable into something useful
+results = [1, 2, 3, 4, 5].async.map { |n| slow_api_call(n) }
+# => [2, 4, 6, 8, 10]  (but in 1 second instead of 5)
 
-# Works with any enumerable
-(1..100).async.select { |n| expensive_check(n) }
-
-# Chain async operations
-data.async
-  .select { |item| item.valid? }
-  .map { |item| process(item) }
-  .take(10)
+# Works with anything Enumerable
+(1..1000).async.select { |n| check_api(n) }  # Hit all the APIs at once
+Set[*urls].async.map { |url| fetch(url) }
 ```
 
-### Including in Your Classes
+### Example: The Coffee Shop ☕
 
-Async::Enumerable can be included in your own classes to add async capabilities:
+Let's say you're fetching data from GitHub's API (because of course you are):
+
+```ruby
+require 'async/enumerable'
+require 'net/http'
+require 'json'
+
+coffee_shops = [
+  { name: "Starbucks", api: "https://api.github.com/users/starbucks" },
+  { name: "Blue Bottle", api: "https://api.github.com/users/bluebottle" },
+  { name: "Philz", api: "https://api.github.com/users/philz" },
+  { name: "Peet's", api: "https://api.github.com/users/peets" },
+  { name: "Dunkin'", api: "https://api.github.com/users/dunkin" }
+]
+
+# The slow way
+start = Time.now
+shop_data = coffee_shops.map do |shop|
+  response = Net::HTTP.get(URI(shop[:api]))
+  { shop[:name] => JSON.parse(response)["public_repos"] rescue 0 }
+end
+puts "Sequential: #{Time.now - start} seconds"  # Go get coffee
+
+# The async way (like you have better things to do)
+start = Time.now
+shop_data = coffee_shops.async.map do |shop|
+  response = Net::HTTP.get(URI(shop[:api]))
+  { shop[:name] => JSON.parse(response)["public_repos"] rescue 0 }
+end
+puts "Parallel: #{Time.now - start} seconds"  # Already done
+```
+
+### Example: Finding Your Keys 🔑
+
+Here's something fun - `find` returns the **fastest** result, not necessarily the first:
+
+```ruby
+rooms = [
+  { name: "Kitchen", search_time: 0.3 },
+  { name: "Bedroom", search_time: 0.1 },  
+  { name: "Garage", search_time: 0.5 },
+  { name: "Living Room", search_time: 0.2 }
+]
+
+# Sequential search - always searches rooms in order
+found = rooms.find do |room|
+  sleep(room[:search_time])  # Simulate searching
+  room[:name] == "Bedroom"
+end
+# Always takes 0.4 seconds (Kitchen + Bedroom)
+
+# Async search - everyone searches at once!
+found = rooms.async.find do |room|
+  sleep(room[:search_time])  # Simulate searching  
+  room[:name] == "Bedroom"
+end
+# Takes only 0.1 seconds! (Bedroom finishes first)
+
+# With larger collections, early termination really shines:
+servers = 100.times.map { |i| "server-#{i}" }
+
+# Check servers for the one with our data
+found = servers.async(max_fibers: 10).find do |server|
+  response = check_server(server)  # 0.5-2 seconds each
+  response[:has_data]
+end
+# Stops checking as soon as one server responds with data!
+# The other fibers are cancelled, saving time and resources.
+```
+
+### Example: The Validator Squad ✅
+
+Running multiple validations? Let them work in parallel:
+
+```ruby
+class EmailValidator
+  include Async::Enumerable
+  def_async_enumerable :@checks
+  
+  def initialize(email)
+    @email = email
+    @checks = [
+      -> { check_dns_record },        # 0.5 seconds
+      -> { check_disposable_domain }, # 0.3 seconds  
+      -> { check_smtp_verify },       # 1.0 seconds
+      -> { check_reputation }         # 0.4 seconds
+    ]
+  end
+  
+  def valid?
+    # All checks must pass - but run them in parallel!
+    @checks.async.all? { |check| check.call }
+    # Total time: ~1.0 seconds (the slowest check)
+    # Sequential would be: 2.2 seconds
+  end
+  
+  def suspicious?
+    # Stops as soon as ANY check fails
+    @checks.async.any? { |check| !check.call }
+  end
+end
+```
+
+### Example: Data Pipeline 📈
+
+Chain operations and stay async the whole way:
+
+```ruby
+# Processing a bunch of user records
+users = User.all  # Let's say 1000 users
+
+results = users
+  .async(max_fibers: 50)  # Be nice to the database
+  .select { |u| u.active? }  # Parallel filtering
+  .map { |u| enrich_with_api_data(u) }  # Parallel API calls
+  .reject { |u| u.data[:score] < 0.5 }  # Parallel scoring
+  .sort_by { |u| -u.data[:score] }  # Sort by score
+  .take(100)  # Top 100 users
+
+# Each step runs in parallel, but waits for completion before the next step.
+# Still way faster than sequential!
+```
+
+### Example: Rate-Limited API Scraper 🎯
+
+Respect rate limits while maximizing throughput:
+
+```ruby
+class GitHubScraper
+  include Async::Enumerable
+  def_async_enumerable :@repos, max_fibers: 10  # GitHub rate limit friendly
+  
+  def initialize(org)
+    @repos = fetch_repo_list(org)
+  end
+  
+  def analyze_repos
+    @repos.async.map do |repo|
+      # These run in parallel, but max 10 at a time
+      data = fetch_repo_details(repo)
+      {
+        name: repo,
+        stars: data["stargazers_count"],
+        language: data["language"],
+        last_update: data["updated_at"]
+      }
+    end
+  end
+end
+
+# Scrape responsibly!
+scraper = GitHubScraper.new("ruby")
+repo_analysis = scraper.analyze_repos  # Fast but respectful
+```
+
+## How Does It Work?
+
+### All Your Favorite Methods, Now Actually Parallel
+
+```ruby
+# Every Enumerable method you know and love:
+[1, 2, 3].async.map { |n| expensive_calc(n) }     # ⚡ Parallel map
+[1, 2, 3].async.select { |n| slow_check(n) }      # ⚡ Parallel select  
+[1, 2, 3].async.any? { |n| api_check(n) }         # ⚡ Stops when found!
+[1, 2, 3].async.find { |n| database_lookup(n) }   # ⚡ First to finish wins!
+
+# Chain them together:
+data.async
+  .select { |x| x.valid? }        # Parallel filtering
+  .map { |x| transform(x) }       # Parallel transformation
+  .reduce(0) { |sum, x| sum + x } # Even reduce works!
+```
+
+### Smart Early Termination 🧠
+
+Some methods are smart enough to stop as soon as they know the answer:
+
+- **`any?`** - Stops at first true
+- **`all?`** - Stops at first false  
+- **`none?`** - Stops at first true
+- **`find`** - Stops when found
+- **`include?`** - Stops when found
+
+This means if you're checking 1000 items and the 3rd one matches, the other 997 can go home early.
+
+### Including in Your Own Classes
+
+Make your custom collections async-capable:
 
 ```ruby
 class TodoList
   include Async::Enumerable
-  def_async_enumerable :@todos  # Specify which ivar/method returns the enumerable
+  def_async_enumerable :@todos  # Tell it what to enumerate
   
   def initialize
     @todos = []
   end
   
-  def add(todo)
+  def <<(todo)
     @todos << todo
     self
   end
-  
-  attr_reader :todos
 end
 
 list = TodoList.new
-list.add("Buy milk").add("Write code").add("Review PR")
+list << "Buy coffee" << "Write code" << "Ship it!"
 
-# Process todos asynchronously
-completed = list.async.map { |todo| process_todo(todo) }.sync
+# Now your class has async!
+list.async.map { |todo| complete_todo(todo) }
 ```
 
-You can also specify a default fiber limit for your class:
+## Things to Know
+
+### The "Fastest Wins" Rule for `find`
+
+With async, `find` returns the **fastest** result, not the **first** one:
 
 ```ruby
-class ApiClient
-  include Async::Enumerable
-  def_async_enumerable :@endpoints, max_fibers: 10  # Limit concurrent requests
-  
-  attr_reader :endpoints
-end
+# This is actually a feature, not a bug!
+[slow_api, fast_api, medium_api].async.find { |api| api.has_data? }
+# Returns fast_api's data (even though it's second in the array)
 ```
 
-### Parallel Execution
+If you need the first by position, just use regular (non-async) find.
 
-The main benefit of Async::Enumerable is parallel execution of block operations:
+### Comparison Works Without `.sync`
 
-```ruby
-require 'async/enumerable'
-require 'net/http'
-
-urls = [
-  'https://api.github.com/users/ruby',
-  'https://api.github.com/users/rails',
-  'https://api.github.com/users/matz'
-]
-
-# Synchronous - requests made sequentially
-responses = urls.map do |url|
-  Net::HTTP.get(URI(url))
-end
-
-# Asynchronous - requests made in parallel
-responses = urls.async.map do |url|
-  Net::HTTP.get(URI(url))
-end
-```
-
-### Supported Methods
-
-Async::Enumerable supports **all** Enumerable methods through different strategies:
-
-#### Methods with Async Implementations
-
-Most Enumerable methods work automatically through the async implementation of `each`:
-- `map`, `select`, `reject`, `collect`, `filter`, `filter_map`
-- `reduce`, `inject`, `sum`, `min`, `max`, `minmax`
-- `count`, `tally`, `group_by`, `partition`
-- `sort`, `sort_by`, `uniq`, `compact`
-- `to_a`, `to_h`, `entries`
-- `each_with_index`, `each_with_object`, `with_index`
-- `zip`, `cycle`, `chunk`, `slice_*`
-
-These methods automatically benefit from parallel execution when blocks contain
-I/O or expensive operations.
-
-#### Methods with Optimized Early Termination
-
-The Predicates module provides optimized implementations that stop
-processing as soon as the result is determined:
-
-- `all?` - Returns true if all elements match (stops on first false)
-- `any?` - Returns true if any element matches (stops on first true)
-- `none?` - Returns true if no elements match (stops on first true)
-- `one?` - Returns true if exactly one element matches
-- `include?` / `member?` - Check if collection includes a value
-- `find` / `detect` - Find first matching element *
-- `find_index` - Find index of matching element *
-
-**\* Important:** `find` and `find_index` return the **fastest completing** result, not necessarily the **first** element in order. See [Parallel Execution Behavior](#parallel-execution-behavior) below.
-
-#### Methods Delegated to Synchronous Implementation
-
-Some methods are inherently sequential and are delegated back to the wrapped enumerable:
-- `first` - Takes elements from the beginning
-- `take` - Takes first n elements
-- `take_while` - Must evaluate elements in order
-- `lazy` - Returns a standard lazy enumerator (lazy evaluation uses break internally, incompatible with async)
-
-### Method Chaining
-
-Async::Enumerator maintains the async context through method chains. Transformation methods like `map`, `select`, and `reject` return new `Async::Enumerator` instances, allowing you to chain multiple operations while staying in "async land":
+No need to call `.sync` for comparisons:
 
 ```ruby
-# Chain stays async until .sync
-result = [1, 2, 3, 4, 5].async
-                        .map { |x| expensive_operation(x) }    # Returns Async::Enumerator
-                        .select { |x| x > threshold }          # Returns Async::Enumerator
-                        .map { |x| transform(x) }              # Returns Async::Enumerator
-                        .sync                                   # Returns Array
-
-# The .sync method explicitly converts back to an array
-data = urls.async
-           .map { |url| fetch_data(url) }
-           .select { |data| data.valid? }
-           .sync  # Get final results as array
-```
-
-Async::Enumerator also implements comparison operators, so it can be compared directly with arrays:
-
-```ruby
-# Equality comparison works without .sync
 async_result = [1, 2, 3].async.map { |x| x * 2 }
-async_result == [2, 4, 6]  # => true
+async_result == [2, 4, 6]  # => true!
 
-# This makes testing clean and simple
-expect(data.async.select { |x| x.valid? }).to eq(expected_valid_items)
+# Perfect for testing:
+expect(data.async.select(&:valid?)).to eq(expected_items)
 ```
 
-### Module Structure
+## When to Use Async (and When Not To)
 
-Async::Enumerable is organized into logical modules for better maintainability and selective inclusion:
+### Use Async When You Have:
+- **I/O operations** - API calls, database queries, file reads
+- **Network latency** - Waiting for remote services
+- **Independent operations** - Each item can be processed alone
+- **Multiple external systems** - Coordinating different data sources
 
-- **`Async::Enumerable::Methods::Transformers`** - Methods that transform collections (map, select, reject, etc.)
-- **`Async::Enumerable::Methods::Predicates`** - Methods that test conditions with early termination (all?, any?, none?, one?, include?, find, find_index)
-- **`Async::Enumerable::Methods::Converters`** - Methods that convert to other types (to_a, sync)
-- **`Async::Enumerable::Methods::Aggregators`** - Aggregation methods inherited from Enumerable (reduce, sum, count, etc.)
-- **`Async::Enumerable::Methods::Iterators`** - Iteration helpers inherited from Enumerable (each_with_index, each_cons, etc.)
-- **`Async::Enumerable::Methods::Slicers`** - Slicing/filtering methods inherited from Enumerable (drop, grep, partition, etc.)
-- **`Async::Enumerable::ConcurrencyBounder`** - Cross-cutting concern for limiting concurrent fibers
-- **`Async::Enumerable::Configurable`** - Configuration management system with hierarchical config inheritance and collection resolution
-- **`Async::Enumerable::Comparable`** - Comparison operators for async enumerators
-
-You can selectively include specific modules if needed:
+### Skip Async When You Have:
+- **Super fast operations** - Simple math, string manipulation
+- **Sequential dependencies** - Each step needs the previous result
+- **Tiny collections** - Overhead isn't worth it for 3 items
 
 ```ruby
-class CustomAsync
-  include Enumerable
-  include Async::Enumerable::Methods::Transformers::Map
-  include Async::Enumerable::Methods::Converters::Sync
-  include Async::Enumerable::ConcurrencyBounder
-  
-  # Only has async map and sync methods
-end
+# GOOD: I/O bound operations
+urls.async.map { |url| HTTP.get(url) }  # 🚀 Much faster!
+
+# BAD: CPU-bound calculations
+numbers.async.map { |n| n * 2 }  # 🐢 Slower (fiber overhead)
+
+# GOOD: I/O operations
+files.async.map { |f| File.read(f) }  # 🚀 Parallel I/O!
+
+# BAD: Sequential operations
+data.async.map { |x| @sum += x }  # ❌ Don't do this!
 ```
 
-### Parallel Execution Behavior
+## Performance 📊
 
-Due to the parallel nature of async operations, some methods behave differently than their synchronous counterparts:
+We ran benchmarks with simulated I/O operations. Here's what happened:
 
-#### Find and Find_index Return Fastest Result
-
-When using `find`, `detect`, or `find_index` with async enumeration, the result returned is the **first to complete evaluation**, not necessarily the first element in the collection order:
-
-```ruby
-# Synchronous - always returns 3 (first element > 2)
-[1, 2, 3, 4, 5].find { |n| n > 2 }  # => 3
-
-# Async - returns whichever completes first
-[1, 2, 3, 4, 5].async.find { |n| 
-  sleep(6 - n)  # Element 5 completes first
-  n > 2 
-}  # => Could be 3, 4, or 5 (likely 5 due to shorter sleep)
-```
-
-This is a performance optimization - as soon as any matching element is found, the search terminates immediately without waiting for earlier elements to complete.
-
-#### When Order Matters
-
-If you need the **first element by position** rather than the **fastest to evaluate**, you have several options:
-
-```ruby
-# Option 1: Use synchronous enumeration
-collection.find { |item| expensive_check(item) }
-
-# Option 2: Process in order then find
-collection.async.map { |item| [item, expensive_check(item)] }
-          .find { |item, result| result }
-          &.first
-
-# Option 3: Use with_index to track position
-matches = collection.async.filter_map.with_index do |item, index|
-  expensive_check(item) ? [index, item] : nil
-end
-first_match = matches.min_by { |index, _| index }&.last
-```
-
-This behavior applies to:
-- `find` / `detect` - Returns fastest matching element
-- `find_index` - Returns index of fastest matching element
-
-Other predicates like `all?`, `any?`, `none?`, `one?`, and `include?` return boolean values, so the order doesn't affect the result.
-
-### When to Use Async
-
-Async::Enumerable is beneficial when:
-- Operations in the block are I/O bound (network requests, file operations)
-- You have a large collection with expensive operations per element
-- The order of results doesn't matter, or you're collecting all results
-
-Async::Enumerable may not help (and could be slower) when:
-- Operations are very fast/simple
-- Order of execution matters (for find/find_index)
-- Operations depend on previous results
-- The overhead of concurrency exceeds the operation cost
-
-### Examples
-
-#### Parallel API Requests
-```ruby
-user_ids = [1, 2, 3, 4, 5]
-
-# Fetch user data in parallel
-users = user_ids.async.map do |id|
-  fetch_user_from_api(id)
-end
-```
-
-#### Parallel File Processing
-```ruby
-file_paths = Dir.glob("*.txt")
-
-# Process files in parallel
-results = file_paths.async.map do |path|
-  process_file(File.read(path))
-end
-```
-
-#### Early Termination with any?
-```ruby
-# Stops as soon as one valid item is found
-has_valid = items.async.any? do |item|
-  expensive_validation(item)
-end
-```
-
-#### Finding in Parallel
-```ruby
-# Searches in parallel, stops when found
-result = large_dataset.async.find do |record|
-  complex_matching_logic(record)
-end
-```
-
-## Benchmarks
-
-The gem includes benchmarks that demonstrate the performance characteristics of async operations compared to synchronous ones.
-
-### Performance Results
-
-When operations involve IO (simulated with sleep delays), async methods show significant performance improvements that scale with collection size:
-
-#### Collection Size Comparison
+### Collection Size Comparison
 
 | Collection Size | Sync (i/s) | Async (i/s) | Speedup |
 |----------------|------------|-------------|---------|
-| 10 items       | 159.8      | 924.7       | **5.8x faster** |
-| 100 items      | 15.8       | 325.2       | **20.6x faster** |
-| 1000 items     | 7.8        | 44.7        | **5.8x faster** |
+| 10 items       | 158.8      | 915.4       | **5.8x faster** 🚀 |
+| 100 items      | 16.0       | 325.6       | **20.4x faster** 🚀🚀 |
+| 1000 items     | 7.8        | 45.1        | **5.8x faster** 🚀 |
 
-*Note: For 1000+ items, using `max_fibers` can provide additional optimization*
+*For huge collections, tune `max_fibers` for even better performance!*
 
-#### Early Termination Performance
-
-Even methods that can terminate early benefit from async execution:
+### Early Termination Performance
 
 | Method | Scenario | Sync (i/s) | Async (i/s) | Speedup |
 |--------|----------|------------|-------------|---------|
-| `any?` | Early match | 265.5 | 1190.9 | **4.5x faster** |
-| `any?` | Late match | 16.5 | 351.8 | **21.3x faster** |
-| `find` | Middle element | 31.8 | 412.5 | **13.0x faster** |
+| `any?` | Early match | 265.3 | 1196.0 | **4.5x faster** ⚡ |
+| `any?` | Late match | 16.4 | 355.8 | **21.8x faster** ⚡⚡ |
+| `find` | Middle element | 31.8 | 413.0 | **13.0x faster** ⚡⚡ |
 
-#### Max Fibers Configuration
+The takeaway? The more I/O you have, the more you'll love async.
 
-For very large collections, limiting concurrent fibers can improve performance:
+### Fine-Tuning Performance
 
 ```ruby
-# Default (1024 fibers max)
-(1..10000).async.map { |n| process(n) }
-
-# Limited to 100 concurrent fibers
+# Processing 10,000 items? Control your fibers:
 (1..10000).async(max_fibers: 100).map { |n| process(n) }
 
-# Configure global default
-Async::Enumerable.configure { |c| c.max_fibers = 100 }
-
-# Configure at class level
-class MyClass
+# Set a default for your class:
+class DataProcessor
   include Async::Enumerable
-  def_async_enumerable :@data, max_fibers: 50
+  def_async_enumerable :@items, max_fibers: 50
 end
 ```
 
-### Running Benchmarks
+## Learn More
 
-```bash
-# Run detailed benchmarks with organized comparisons
-bundle exec rake benchmark
-
-# Run quick performance overview
-bundle exec rake benchmark_quick
-
-# Run specific benchmark files
-bundle exec benchmark-driver benchmark/size_comparison/map_100.yaml
-bundle exec benchmark-driver benchmark/early_termination/any_early.yaml
-```
-
-### Benchmark Structure
-
-The benchmarks are organized into two categories:
-
-#### Size Comparison Benchmarks (`benchmark/size_comparison/`)
-Compare sync vs async performance across different collection sizes (10, 100, 1000, 10000 items):
-- **map_*.yaml** - Tests parallel transformation performance at different scales
-
-#### Early Termination Benchmarks (`benchmark/early_termination/`)
-Test methods that can stop processing early:
-- **any_early.yaml** - Tests `any?` with early match
-- **any_late.yaml** - Tests `any?` with late match  
-- **find_middle.yaml** - Tests `find` with middle element match
-
-The benchmarks simulate IO operations using scaled sleep delays to demonstrate real-world performance benefits.
-
-### Writing Custom Benchmarks
-
-You can create your own benchmarks using benchmark-driver's YAML format:
-
-```yaml
-prelude: |
-  require 'async/enumerable'
-  
-  def expensive_operation(n)
-    sleep(rand / 100.0) # Simulate 0-10ms IO
-    n * 2
-  end
-  
-  data = (1..100).to_a
-
-benchmark:
-  sync: data.map { |n| expensive_operation(n) }
-  async: data.async.map { |n| expensive_operation(n) }
-```
+📖 **[API Reference](docs/reference)** - Complete method documentation  
+📚 **[Technical Details](docs/technical-details.md)** - Module architecture, configuration, patterns  
+📊 **[Benchmarking Guide](docs/benchmarks.md)** - Run your own benchmarks, tuning tips  
+💎 **[RubyGems Page](https://rubygems.org/gems/async-enumerable)** - Installation, version history
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+Want to contribute? Awesome! 🎉
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```bash
+bin/setup     # Install dependencies
+rake spec     # Run tests
+bin/console   # Play around in IRB
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/jetpks/async-enumerable. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/jetpks/async-enumerable/blob/main/CODE_OF_CONDUCT.md).
+We'd love your help making async-enumerable even better! Check out the [issues](https://github.com/jetpks/async-enumerable/issues) or submit a PR. This project is a safe, welcoming space for collaboration.
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
+## Special Thanks
+
+- [socketry/async](https://github.com/socketry/async) for the async implementation
+- [concurrent-ruby](https://github.com/ruby-concurrency/concurrent-ruby) for thread-safe primitives
+- You, for reading this far! 💖
+
 ## Code of Conduct
 
-Everyone interacting in the Async::Enumerable project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/jetpks/async-enumerable/blob/main/CODE_OF_CONDUCT.md).
+Be excellent to each other! See our [code of conduct](https://github.com/jetpks/async-enumerable/blob/main/CODE_OF_CONDUCT.md).
