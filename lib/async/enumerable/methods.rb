@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "async/enumerable/collection_resolver"
-
 require "async/enumerable/methods/each"
 
 require "async/enumerable/methods/aggregators"
@@ -15,8 +13,6 @@ module Async
   module Enumerable
     # Methods contains all async implementations of Enumerable methods
     module Methods
-      include CollectionResolver
-
       include Each
 
       include Aggregators

@@ -184,8 +184,7 @@ Async::Enumerable is organized into logical modules for better maintainability a
 - **`Async::Enumerable::Methods::Iterators`** - Iteration helpers inherited from Enumerable (each_with_index, each_cons, etc.)
 - **`Async::Enumerable::Methods::Slicers`** - Slicing/filtering methods inherited from Enumerable (drop, grep, partition, etc.)
 - **`Async::Enumerable::ConcurrencyBounder`** - Cross-cutting concern for limiting concurrent fibers
-- **`Async::Enumerable::Configurable`** - Configuration management system with hierarchical config inheritance
-- **`Async::Enumerable::CollectionResolver`** - Resolves the underlying collection from various sources
+- **`Async::Enumerable::Configurable`** - Configuration management system with hierarchical config inheritance and collection resolution
 - **`Async::Enumerable::Comparable`** - Comparison operators for async enumerators
 
 You can selectively include specific modules if needed:

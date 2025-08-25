@@ -7,7 +7,7 @@ module Async
         def self.included(base)
           base.include(::Enumerable) # Dependency
           base.include(ConcurrencyBounder) # Dependency
-          base.include(CollectionResolver) # Dependency
+          base.include(Configurable) # Dependency for collection resolution
         end
 
         # Executes block for each element in parallel.

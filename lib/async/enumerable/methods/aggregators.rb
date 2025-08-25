@@ -24,7 +24,7 @@ module Async
       module Aggregators
         def self.included(base)
           base.include(Each) # Dependency
-          base.include(CollectionResolver) # Dependency
+          base.include(Configurable) # Dependency for collection resolution
 
           # Delegate non-parallelizable aggregator methods directly to the collection
           base.extend(Forwardable)

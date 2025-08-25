@@ -19,7 +19,6 @@ end
 require "async/enumerable/configurable"
 require "async/enumerable/concurrency_bounder"
 require "async/enumerable/comparable"
-require "async/enumerable/class_methods"
 require "async/enumerable/methods"
 require "async/enumerable/version"
 
@@ -39,7 +38,8 @@ module Async
       # @param base [Class] The including class
       def included(base)
         base.extend(Configurable)
-        base.extend(ClassMethods)
+        base.extend(Configurable::ClassMethods)
+        base.include(Configurable)
         base.include(Comparable)
         base.include(Methods)
         base.include(AsyncMethod)

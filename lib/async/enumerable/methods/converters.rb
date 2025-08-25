@@ -5,7 +5,7 @@ module Async
     module Methods
       # Methods that convert enumerables to other types.
       module Converters
-        def self.included(base) = base.include(CollectionResolver)
+        def self.included(base) = base.include(Configurable) # Dependency for collection resolution
 
         # Converts enumerable to array.
         # @return [Array] Array representation

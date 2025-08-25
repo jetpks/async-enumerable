@@ -20,7 +20,7 @@ module Async
       module Slicers
         def self.included(base)
           base.include(Each) # Dependency
-          base.include(CollectionResolver) # Dependency
+          base.include(Configurable) # Dependency for collection resolution
 
           # Delegate non-parallelizable slicer methods directly to the collection
           base.extend(Forwardable)

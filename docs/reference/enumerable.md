@@ -169,10 +169,10 @@ These return new `Async::Enumerator` instances for chaining.
 
 When included, `Async::Enumerable` automatically:
 1. Extends with `Configurable` for configuration management
-2. Extends with `ClassMethods` (provides `def_async_enumerable`)
-3. Includes `Comparable` for comparison operators
-4. Includes all async method implementations
-5. Includes `ConcurrencyBounder` for fiber limiting
+2. Extends with `Configurable::ClassMethods` (provides `def_async_enumerable`)
+3. Includes `Configurable` for instance-level configuration
+4. Includes `Comparable` for comparison operators
+5. Includes all async method implementations
 6. Includes `AsyncMethod` module that provides the `async` method
 
 ### Source Resolution
