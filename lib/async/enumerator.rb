@@ -13,9 +13,19 @@ module Async
     # @param kwargs [Hash] Configuration options (max_fibers, etc.)
     def initialize(enumerable = [], config = nil, **kwargs)
       @enumerable = enumerable
-      __async_enumerable_configure do |cfg|
-        cfg.to_h.merge(config.to_h, kwargs).each do |key, val|
-          cfg[key] = val
+
+      # Only configure if config or kwargs are provided
+      if config || !kwargs.empty?
+        __async_enumerable_configure do |cfg|
+          # Merge config if provided
+          config&.to_h&.each do |key, val|
+            cfg[key] = val if val
+          end
+
+          # Merge kwargs if provided
+          kwargs.each do |key, val|
+            cfg[key] = val if val
+          end
         end
       end
     end

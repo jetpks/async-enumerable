@@ -20,14 +20,22 @@ module Async
       # @yield [ConfigStruct] A mutable config containing the current values
       # @return [Config] Module configuration
       def __async_enumerable_configure
-        current = __async_enumerable_config_ref.get
+        # Get the current config (with hierarchy)
+        if @__async_enumerable_config_ref
+          current = @__async_enumerable_config_ref.get
+        else
+          # Build config from hierarchy
+          current_hash = __async_enumerable_merge_all_config
+          current = Configurable::Config.new(**current_hash)
+        end
+
         return current unless block_given?
 
         mutable = current.to_struct
         yield mutable
         final = __async_enumerable_merge_all_config(mutable.to_h)
 
-        current.with(**final).tap do |updated|
+        Configurable::Config.new(**final).tap do |updated|
           @__async_enumerable_config_ref = Concurrent::AtomicReference.new(updated)
         end
       end
@@ -44,13 +52,8 @@ module Async
       end
 
       def __async_enumerable_config_ref
-        if @__async_enumerable_config_ref
-          @__async_enumerable_config_ref
-        elsif self.class.respond_to?(:__async_enumerable_config_ref)
-          self.class.__async_enumerable_config_ref
-        else
-          Async::Enumerable.config_ref
-        end
+        # First check for instance-level config ref
+        @__async_enumerable_config_ref || Async::Enumerable.config_ref
       end
     end
   end
