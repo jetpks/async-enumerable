@@ -9,11 +9,14 @@ module Async
         @__async_enumerable_class_overrides = {collection_ref:}.compact.merge(kwargs)
       end
 
+      # Gets the collection reference from config.
+      # @return [Symbol, nil] Collection reference
       def __async_enumerable_collection_ref
         __async_enumerable_config.collection_ref
       end
 
-      # Class method to get config with proper precedence
+      # Gets config with class-level overrides merged.
+      # @return [Config] Merged configuration
       def __async_enumerable_config
         # Dynamically merge module config with class overrides
         base = Async::Enumerable.config
@@ -24,8 +27,9 @@ module Async
         end
       end
 
+      # Returns nil as classes don't cache config refs.
+      # @return [nil] Always nil for class level
       def __async_enumerable_config_ref
-        # Return nil to indicate no cached ref at class level
         nil
       end
     end

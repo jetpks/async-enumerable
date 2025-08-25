@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#include?" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#include?" do
   describe "#include?" do
     it "returns true when element exists" do
       result = [1, 2, 3].async.include?(2)

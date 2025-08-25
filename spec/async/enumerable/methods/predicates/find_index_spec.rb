@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#find_index" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#find_index" do
   describe "#find_index" do
     it "returns index of first element matching block" do
       result = [1, 2, 3, 4, 5].async.find_index { |n| n > 2 }

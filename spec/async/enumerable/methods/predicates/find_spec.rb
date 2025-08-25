@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#find" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#find" do
   describe "#find" do
     it "returns first element matching condition" do
       result = [1, 2, 3, 4, 5].async.find { |n| n > 2 }

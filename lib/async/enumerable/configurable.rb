@@ -14,11 +14,9 @@ module Async
         end
       end
 
-      # Gets config, yields a mutable version of the config to block for
-      # editing if a block is given
-      #
-      # @yield [ConfigStruct] A mutable config containing the current values
-      # @return [Config] Module configuration
+      # Gets or updates configuration with block.
+      # @yield [ConfigStruct] Mutable config for editing
+      # @return [Config] Current or updated configuration
       def __async_enumerable_configure
         # Get the current config (with hierarchy)
         if @__async_enumerable_config_ref
@@ -41,6 +39,9 @@ module Async
       end
       alias_method :__async_enumerable_config, :__async_enumerable_configure
 
+      # Merges configs from all hierarchy levels.
+      # @param config [Hash, nil] Additional config to merge
+      # @return [Hash] Merged configuration hash
       def __async_enumerable_merge_all_config(config = nil)
         [Async::Enumerable.config].tap do |arr|
           class_cfg = self.class.respond_to?(:__async_enumerable_config) ? self.class.__async_enumerable_config : nil
@@ -51,6 +52,8 @@ module Async
         end.compact.map(&:to_h).reduce(&:merge)
       end
 
+      # Gets the config reference for this object.
+      # @return [AtomicReference] Config reference
       def __async_enumerable_config_ref
         # First check for instance-level config ref
         @__async_enumerable_config_ref || Async::Enumerable.config_ref

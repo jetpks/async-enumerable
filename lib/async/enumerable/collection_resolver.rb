@@ -2,19 +2,21 @@
 
 module Async
   module Enumerable
-    # Provides helper methods to get the collection on which to enumerate
+    # Resolves the enumerable collection source.
+    # @api private
     module CollectionResolver
       def self.included(base)
         base.extend(ClassMethods) # Dependency
       end
 
+      # Gets collection reference from class.
+      # @return [Symbol, nil] Collection reference
       def __async_enumerable_collection_ref
         self.class.__async_enumerable_collection_ref
       end
 
-      # Gets the enumerable source based on the context:
-      # - For includable pattern with def_enumerator: calls the configured method
-      # - For includable pattern without def_enumerator: returns self
+      # Resolves the actual enumerable collection.
+      # @return [Enumerable] The collection to enumerate
       def __async_enumerable_collection
         return self unless __async_enumerable_collection_ref.is_a?(Symbol)
 

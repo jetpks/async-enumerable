@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe "Async::Enumerable::EarlyTerminable#one?" do
+RSpec.describe "Async::Enumerable::Methods::Predicates#one?" do
   describe "#one?" do
     it "returns true when exactly one element matches" do
       result = [1, 2, 3].async.one? { |n| n == 2 }

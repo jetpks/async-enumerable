@@ -35,6 +35,8 @@ module Async
       alias_method :config, :__async_enumerable_config
       alias_method :configure, :__async_enumerable_config
 
+      # Configures modules when included in a class.
+      # @param base [Class] The including class
       def included(base)
         base.extend(Configurable)
         base.extend(ClassMethods)
@@ -43,6 +45,8 @@ module Async
         base.include(AsyncMethod)
       end
 
+      # Gets the module-level config reference.
+      # @return [AtomicReference] Config reference
       def config_ref
         @__async_enumerable_config_ref
       end

@@ -8,15 +8,15 @@ module Async
       class Config < Data.define(:collection_ref, :max_fibers)
         DEFAULT_MAX_FIBERS = 1024
 
-        # Define the struct class once to avoid redefinition warnings
-        ConfigStruct = Struct.new(:collection_ref, :max_fibers)
-
         def initialize(collection_ref: nil, max_fibers: DEFAULT_MAX_FIBERS)
           super
         end
 
-        # returns a materialized struct of the current config -- used in
-        # Async::Enumerable.configure
+        # Define the struct class once to avoid redefinition warnings
+        ConfigStruct = Struct.new(*members)
+
+        # Creates mutable struct for configuration editing.
+        # @return [ConfigStruct] Mutable config struct
         def to_struct
           ConfigStruct.new(*deconstruct)
         end

@@ -3,7 +3,7 @@
 module Async
   module Enumerable
     # Provides bounded concurrency control for async operations.
-    # See docs/reference/fiber_limiter.md for detailed documentation.
+    # See docs/reference/concurrency_bounder.md for detailed documentation.
     # @api private
     module ConcurrencyBounder
       def self.included(base) = base.include(Configurable)
